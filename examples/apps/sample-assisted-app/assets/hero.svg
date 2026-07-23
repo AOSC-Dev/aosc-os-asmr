@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="480" viewBox="0 0 1280 480">
+  <rect width="1280" height="480" fill="#172535"/>
+  <path d="M1020 80v240m-100-100 100 100 100-100M840 360h360" fill="none" stroke="#4c8ed9" stroke-width="34"/>
+  <text x="80" y="250" fill="#f4f7f4" font-family="sans-serif" font-size="64">Assisted Download</text>
+</svg>
+

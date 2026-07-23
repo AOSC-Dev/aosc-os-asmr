@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aosc.io/asmr/schemas/repository.schema.json",
+  "title": "ASMR repository policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "repository_id",
+    "default_locale",
+    "minimum_client_version"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "repository_id": { "type": "string", "minLength": 1 },
+    "default_locale": { "type": "string", "minLength": 2 },
+    "minimum_client_version": { "type": "string", "minLength": 1 }
+  }
+}

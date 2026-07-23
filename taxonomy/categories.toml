@@ -1,0 +1,21 @@
+[categories.office]
+name = { zh-CN = "办公", en = "Office" }
+
+[categories.communication]
+name = { zh-CN = "通讯", en = "Communication" }
+
+[categories.games]
+name = { zh-CN = "游戏", en = "Games" }
+
+[categories.video]
+name = { zh-CN = "影音", en = "Audio and video" }
+
+[categories.creating]
+name = { zh-CN = "创作", en = "Creative tools" }
+
+[categories.development]
+name = { zh-CN = "开发", en = "Development" }
+
+[categories.utilities]
+name = { zh-CN = "工具", en = "Utilities" }
+

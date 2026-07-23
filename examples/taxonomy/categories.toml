@@ -1,0 +1,6 @@
+[categories.office]
+name = { zh-CN = "办公", en = "Office" }
+
+[categories.communication]
+name = { zh-CN = "通讯", en = "Communication" }
+

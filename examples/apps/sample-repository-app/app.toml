@@ -1,0 +1,58 @@
+schema_version = 1
+id = "sample-repository-app"
+visibility = "listed"
+lifecycle = "active"
+default_locale = "zh-CN"
+categories = ["office"]
+aliases = ["Sample App"]
+keywords = ["示例", "办公"]
+maintainers = ["example-maintainer"]
+reviewed_at = 2026-07-23
+
+[locales."zh-CN"]
+name = "仓库软件示例"
+summary = "通过安同 OS 软件仓库安装的软件"
+description = "description.zh-CN.md"
+
+[locales.en]
+name = "Repository App Example"
+summary = "An app installed from the AOSC OS repository"
+description = "description.en.md"
+
+[media]
+icon = "assets/icon.svg"
+hero = "assets/hero.svg"
+hero_focal_point = [0.5, 0.5]
+
+[[media.screenshots]]
+path = "assets/screenshot.svg"
+alt = { zh-CN = "示例软件主界面", en = "Example application window" }
+
+[publisher]
+name = "Example Upstream"
+relationship = "upstream"
+homepage = "https://example.invalid/"
+
+[links]
+homepage = "https://example.invalid/"
+
+[disclosures]
+availability = "verified"
+runtime = "native"
+telemetry = "unknown"
+service = "full"
+support = "aosc"
+reviewed_at = 2026-07-23
+notes = []
+
+[[installers]]
+id = "aosc"
+kind = "aosc-repository"
+priority = 100
+architectures = ["amd64", "arm64"]
+update_policy = "managed"
+
+[installers.package]
+backend = "omactl"
+names = ["sample-app"]
+

@@ -1,0 +1,76 @@
+schema_version = 1
+id = "sample-assisted-app"
+visibility = "listed"
+lifecycle = "active"
+default_locale = "zh-CN"
+categories = ["communication"]
+aliases = ["Assisted Download Example"]
+keywords = ["人工下载", "DEB"]
+maintainers = ["example-maintainer"]
+reviewed_at = 2026-07-23
+
+[locales."zh-CN"]
+name = "引导下载示例"
+summary = "需要用户在官方页面点击下载的软件"
+description = "description.zh-CN.md"
+
+[locales.en]
+name = "Assisted Download Example"
+summary = "An app that requires a user-initiated upstream download"
+description = "description.en.md"
+
+[media]
+icon = "assets/icon.svg"
+hero = "assets/hero.svg"
+hero_focal_point = [0.75, 0.5]
+
+[publisher]
+name = "Example Vendor"
+relationship = "upstream"
+homepage = "https://example.invalid/"
+
+[links]
+homepage = "https://example.invalid/"
+privacy = "https://example.invalid/privacy"
+
+[disclosures]
+availability = "unverified"
+runtime = "native"
+telemetry = "unknown"
+service = "unknown"
+support = "upstream"
+reviewed_at = 2026-07-23
+notes = ["This is non-production sample metadata."]
+
+[[installers]]
+id = "upstream-deb"
+kind = "browser-assisted-deb"
+priority = 100
+architectures = ["amd64"]
+update_policy = "repeat-acquisition"
+
+[installers.policy]
+redistribution = "forbidden"
+automation = "user-mediated"
+license_acceptance = "upstream-page"
+
+[installers.acquisition]
+landing_url = "https://example.invalid/download"
+user_interaction = "required"
+allowed_download_origins = ["https://example.invalid"]
+persist_final_url = false
+
+[installers.artifact]
+format = "deb"
+expected_package_names = ["sample-assisted-app"]
+architectures = ["amd64"]
+version_source = "deb-control"
+min_bytes = 1000000
+max_bytes = 1000000000
+mime_types = ["application/vnd.debian.binary-package", "application/octet-stream"]
+
+[installers.install]
+backend = "omactl"
+capability = "run.install-local.v1"
+processor = "deb-local-v1"
+

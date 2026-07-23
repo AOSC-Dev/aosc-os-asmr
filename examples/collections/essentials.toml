@@ -1,0 +1,11 @@
+schema_version = 1
+id = "essentials"
+visibility = "listed"
+apps = ["sample-repository-app", "sample-assisted-app"]
+
+[locales."zh-CN"]
+title = "装机必备"
+
+[locales.en]
+title = "Essentials"
+

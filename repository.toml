@@ -1,0 +1,4 @@
+schema_version = 1
+repository_id = "org.aosc.asmr"
+default_locale = "zh-CN"
+minimum_client_version = "0.1.0"
