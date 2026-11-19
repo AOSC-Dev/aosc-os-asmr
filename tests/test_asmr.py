@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -174,7 +175,21 @@ class AsmrToolTests(unittest.TestCase):
                 )
                 path.write_text(text, encoding="utf-8")
 
-                _catalog, problems = asmr.validate_catalog(root)
+                if kind == "aosc-repository":
+                    tree = root / "abbs"
+                    recipe = tree / "app-test" / "source" / "autobuild"
+                    recipe.mkdir(parents=True)
+                    (recipe.parent / "spec").write_text("VER=1\n")
+                    (recipe / "defines").write_text(
+                        f'PKGNAME=sample-{kind}\nPKGSEC=utils\nPKGDES="Example package"\n'
+                    )
+                    for args in (["init", "-q"], ["add", "."], ["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "fixture"]):
+                        subprocess.run(["git", "-C", str(tree), *args], check=True)
+                    self.assertIn("external = false", text)
+                    _catalog, problems = asmr.validate_catalog(root, abbs_tree=tree)
+                else:
+                    self.assertIn("external = true", text)
+                    _catalog, problems = asmr.validate_catalog(root)
 
                 self.assertEqual([], problems)
 

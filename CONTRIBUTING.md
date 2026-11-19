@@ -2,6 +2,8 @@
 
 **English** | [简体中文](CONTRIBUTING.zh-CN.md)
 
+ASMR uses ABBS-generated defaults with field-level handwritten overrides. Entries absent from ABBS require `external = true`. See [defaults and overrides](docs/abbs-overlays.md).
+
 Read the [maintainer guide](docs/maintainer-guide.md) before adding or changing
 application metadata.
 

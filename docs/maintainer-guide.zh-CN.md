@@ -2,6 +2,8 @@
 
 [English](maintainer-guide.md) | **简体中文**
 
+使用 ABBS 构建时，手写文件是部分覆盖层。下列完整字段约束作用于合并结果；覆盖规则及缺省字段见 [ABBS 缺省值与手写覆盖](abbs-overlays.zh-CN.md)。外部条目必须添加 `external = true`。
+
 本手册面向负责把软件加入 AOSKA 搜索、详情页和推荐集合的维护者。
 
 ## 1. 基本原则
@@ -19,7 +21,7 @@
 
 ```bash
 python3 --version
-python3 tools/asmr.py check
+python3 tools/asmr.py check --abbs-tree ../aosc-os-abbs
 ```
 
 推荐安装支持 Taplo/Even Better TOML 的编辑器插件。仓库中的 `taplo.toml` 和 `schemas/`
@@ -132,7 +134,7 @@ apps = ["firefox", "vendor-app"]
 提交前运行：
 
 ```bash
-make check
+make check ABBS_TREE=../aosc-os-abbs
 make check-examples
 make test
 ```
@@ -140,7 +142,7 @@ make test
 如需查看生成物：
 
 ```bash
-python3 tools/asmr.py build
+python3 tools/asmr.py build --abbs-tree ../aosc-os-abbs
 find dist/v1 -type f
 ```
 

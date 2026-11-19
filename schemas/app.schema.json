@@ -1,35 +1,30 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://aosc.io/asmr/schemas/app.schema.json",
-  "title": "ASMR application metadata",
+  "title": "ASMR handwritten application overlay",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "schema_version",
-    "id",
-    "visibility",
-    "lifecycle",
-    "default_locale",
-    "categories",
-    "maintainers",
-    "reviewed_at",
-    "locales",
-    "media",
-    "publisher",
-    "disclosures",
-    "installers"
-  ],
   "properties": {
-    "schema_version": { "const": 1 },
+    "schema_version": {
+      "const": 1
+    },
     "id": {
       "type": "string",
-      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+      "pattern": "^[a-z0-9][a-z0-9+._-]*$"
     },
     "visibility": {
-      "enum": ["listed", "unlisted", "hidden"]
+      "enum": [
+        "listed",
+        "unlisted",
+        "hidden"
+      ]
     },
     "lifecycle": {
-      "enum": ["active", "deprecated", "blocked"]
+      "enum": [
+        "active",
+        "deprecated",
+        "blocked"
+      ]
     },
     "default_locale": {
       "type": "string",
@@ -37,25 +32,35 @@
     },
     "categories": {
       "type": "array",
-      "minItems": 1,
       "uniqueItems": true,
-      "items": { "type": "string", "minLength": 1 }
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
     },
     "aliases": {
       "type": "array",
       "uniqueItems": true,
-      "items": { "type": "string", "minLength": 1 }
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
     },
     "keywords": {
       "type": "array",
       "uniqueItems": true,
-      "items": { "type": "string", "minLength": 1 }
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
     },
     "maintainers": {
       "type": "array",
-      "minItems": 1,
       "uniqueItems": true,
-      "items": { "type": "string", "minLength": 1 }
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
     },
     "reviewed_at": {
       "type": "string",
@@ -64,26 +69,49 @@
     "locales": {
       "type": "object",
       "minProperties": 1,
-      "additionalProperties": { "$ref": "#/$defs/locale" }
+      "additionalProperties": {
+        "$ref": "#/$defs/locale"
+      }
     },
-    "media": { "$ref": "#/$defs/media" },
-    "publisher": { "$ref": "#/$defs/publisher" },
+    "media": {
+      "$ref": "#/$defs/media"
+    },
+    "publisher": {
+      "$ref": "#/$defs/publisher"
+    },
     "links": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "homepage": { "$ref": "#/$defs/httpsUrl" },
-        "support": { "$ref": "#/$defs/httpsUrl" },
-        "privacy": { "$ref": "#/$defs/httpsUrl" },
-        "license": { "$ref": "#/$defs/httpsUrl" },
-        "issues": { "$ref": "#/$defs/httpsUrl" }
+        "homepage": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "support": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "privacy": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "license": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "issues": {
+          "$ref": "#/$defs/httpsUrl"
+        }
       }
     },
-    "disclosures": { "$ref": "#/$defs/disclosures" },
+    "disclosures": {
+      "$ref": "#/$defs/disclosures"
+    },
     "installers": {
       "type": "array",
-      "minItems": 1,
-      "items": { "$ref": "#/$defs/installer" }
+      "items": {
+        "$ref": "#/$defs/installer"
+      }
+    },
+    "external": {
+      "type": "boolean",
+      "description": "True only for an explicitly external application absent from ABBS."
     }
   },
   "$defs": {
@@ -94,38 +122,64 @@
     "locale": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "summary", "description"],
       "properties": {
-        "name": { "type": "string", "minLength": 1 },
-        "summary": { "type": "string", "minLength": 1 },
-        "description": { "type": "string", "minLength": 1 }
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "media": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["icon", "hero"],
       "properties": {
-        "icon": { "type": "string", "minLength": 1 },
-        "hero": { "type": "string", "minLength": 1 },
+        "icon": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hero": {
+          "type": "string",
+          "minLength": 1
+        },
         "hero_focal_point": {
           "type": "array",
           "minItems": 2,
           "maxItems": 2,
-          "items": { "type": "number", "minimum": 0, "maximum": 1 }
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
         },
         "screenshots": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["path", "alt"],
+            "required": [
+              "path",
+              "alt"
+            ],
             "properties": {
-              "path": { "type": "string", "minLength": 1 },
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
               "alt": {
                 "type": "object",
                 "minProperties": 1,
-                "additionalProperties": { "type": "string", "minLength": 1 }
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1
+                }
               }
             }
           }
@@ -135,41 +189,67 @@
     "publisher": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "relationship", "homepage"],
       "properties": {
-        "name": { "type": "string", "minLength": 1 },
-        "relationship": {
-          "enum": ["upstream", "aosc", "third-party", "community"]
+        "name": {
+          "type": "string",
+          "minLength": 1
         },
-        "homepage": { "$ref": "#/$defs/httpsUrl" }
+        "relationship": {
+          "enum": [
+            "upstream",
+            "aosc",
+            "third-party",
+            "community"
+          ]
+        },
+        "homepage": {
+          "$ref": "#/$defs/httpsUrl"
+        }
       }
     },
     "disclosures": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "availability",
-        "runtime",
-        "telemetry",
-        "service",
-        "support",
-        "reviewed_at"
-      ],
       "properties": {
         "availability": {
-          "enum": ["verified", "unverified", "broken", "unknown"]
+          "enum": [
+            "verified",
+            "unverified",
+            "broken",
+            "unknown"
+          ]
         },
         "runtime": {
-          "enum": ["native", "compatibility-layer", "windows", "unknown"]
+          "enum": [
+            "native",
+            "compatibility-layer",
+            "windows",
+            "unknown"
+          ]
         },
         "telemetry": {
-          "enum": ["present", "absent", "unknown"]
+          "enum": [
+            "present",
+            "absent",
+            "unknown"
+          ]
         },
         "service": {
-          "enum": ["full", "limited", "unavailable", "unknown"]
+          "enum": [
+            "full",
+            "limited",
+            "unavailable",
+            "unknown"
+          ]
         },
         "support": {
-          "enum": ["aosc", "upstream", "community", "none", "unknown"]
+          "enum": [
+            "aosc",
+            "upstream",
+            "community",
+            "none",
+            "unknown"
+          ]
         },
         "reviewed_at": {
           "type": "string",
@@ -177,14 +257,21 @@
         },
         "notes": {
           "type": "array",
-          "items": { "type": "string", "minLength": 1 }
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     },
     "installer": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "kind", "update_policy"],
+      "required": [
+        "id",
+        "kind",
+        "update_policy"
+      ],
       "properties": {
         "id": {
           "type": "string",
@@ -198,22 +285,41 @@
             "external-link"
           ]
         },
-        "priority": { "type": "integer" },
+        "priority": {
+          "type": "integer"
+        },
         "architectures": {
           "type": "array",
           "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         },
         "update_policy": {
-          "enum": ["managed", "repeat-acquisition", "external"]
+          "enum": [
+            "managed",
+            "repeat-acquisition",
+            "external"
+          ]
         },
-        "package": { "type": "object" },
-        "policy": { "type": "object" },
-        "acquisition": { "type": "object" },
-        "artifact": { "type": "object" },
-        "install": { "type": "object" }
+        "package": {
+          "type": "object"
+        },
+        "policy": {
+          "type": "object"
+        },
+        "acquisition": {
+          "type": "object"
+        },
+        "artifact": {
+          "type": "object"
+        },
+        "install": {
+          "type": "object"
+        }
       }
     }
-  }
+  },
+  "description": "Optional field overrides merged with ABBS defaults. The builder validates the merged application and installer policy."
 }
-

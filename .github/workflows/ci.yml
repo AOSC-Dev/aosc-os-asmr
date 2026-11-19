@@ -4,6 +4,8 @@ on:
   pull_request:
   push:
   workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * *'
 
 permissions:
   contents: read
@@ -39,21 +41,25 @@ jobs:
           PYTHONDONTWRITEBYTECODE: "1"
         run: python3 -m unittest discover -s tests -v
 
-      - name: Validate production metadata
-        env:
-          PYTHONDONTWRITEBYTECODE: "1"
-        run: python3 tools/asmr.py check
-
       - name: Validate examples
         env:
           PYTHONDONTWRITEBYTECODE: "1"
         run: python3 tools/asmr.py check --root examples
 
-      - name: Build catalog
+      - name: Check out the AOSC stable package recipes
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: AOSC-Dev/aosc-os-abbs
+          ref: stable
+          path: .abbs-input
+          persist-credentials: false
+
+      - name: Build catalog from ABBS and editorial metadata
         env:
           PYTHONDONTWRITEBYTECODE: "1"
         run: |
           python3 tools/asmr.py build \
+            --abbs-tree .abbs-input \
             --output "${RUNNER_TEMP}/asmr-dist/v1" \
             --source-commit "${GITHUB_SHA}"
 

@@ -2,6 +2,8 @@
 
 **English** | [简体中文](schema-v1.zh-CN.md)
 
+With an ABBS input, handwritten files are partial overlays. The complete field constraints below apply after merging; see [ABBS defaults and overrides](abbs-overlays.md) for optional defaults. External entries require `external = true`.
+
 This document defines the ASMR v1 source and generated-artifact contract.
 `tools/asmr.py` is the normative implementation. The JSON Schema documents
 under `schemas/` provide editor completion.
@@ -25,9 +27,9 @@ DEB package name.
 
 Each application lives at `apps/<id>/app.toml`. The `id` must match the
 directory name and may contain lowercase ASCII letters, digits, periods,
-underscores, and hyphens.
+underscores, plus signs, and hyphens.
 
-Required top-level fields:
+Required top-level fields for a standalone, fully authored entry (including external entries):
 
 - `schema_version = 1`
 - `id`
@@ -72,7 +74,7 @@ path = "assets/screenshots/main.webp"
 alt = { zh-CN = "软件主界面", en = "Main window" }
 ```
 
-- `icon` and `hero` are required.
+- Standalone entries require `icon` and `hero`. ABBS-generated entries may omit either.
 - AVIF, JPEG, PNG, SVG, and WebP are supported.
 - A source media file must not exceed 10 MiB.
 - A path must not escape the application directory.
