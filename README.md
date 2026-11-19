@@ -30,6 +30,15 @@ and uploads the same layout from its temporary build directory.
 Runtime state comes from the package manager. See the [build workflow](docs/abbs-overlays.md)
 for input responsibilities and output restrictions.
 
+## Catalog channels
+
+| Channel | Base URL | Publication |
+| --- | --- | --- |
+| dev | `https://aosc-dev.github.io/aosc-os-asmr/v1/` | GitHub Pages serves the ABBS catalog after successful pushes, scheduled builds and manual runs on `main`. |
+| stable | `https://repo.aosc.io/asmr/v1/` | Planned location on the AOSC repository. Stable publication is pending. |
+
+For the first dev deployment, select **Settings → Pages → Build and deployment → Source → GitHub Actions** in this repository. Run the CI workflow on `main` and check `v1/index.json` on the published site. Pull requests and other branches produce test artifacts only. The example catalog stays in the regular CI artifact.
+
 ## Quick start
 
 Python 3.11 or newer is required. The maintainer tool has no third-party Python

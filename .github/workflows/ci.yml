@@ -87,3 +87,29 @@ jobs:
             ${{ runner.temp }}/asmr-examples
           if-no-files-found: error
           retention-days: 14
+
+      - name: Write the Pages entry point
+        run: |
+          echo '<!doctype html><html lang="en"><meta charset="utf-8"><title>ASMR dev catalog</title><a href="v1/index.json">ASMR dev catalog index</a></html>' > "${RUNNER_TEMP}/asmr-dist/index.html"
+
+      - name: Upload the dev catalog for Pages
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ${{ runner.temp }}/asmr-dist
+
+  publish-dev:
+    name: Publish dev catalog to GitHub Pages
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy dev catalog
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
