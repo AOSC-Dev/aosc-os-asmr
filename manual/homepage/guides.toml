@@ -1,0 +1,28 @@
+schema_version = 1
+more_url = "https://wiki.aosc.io/zh/"
+
+[[items]]
+id = "installation"
+date = 2026-11-20
+url = "https://wiki.aosc.io/zh/aosc-os/installation/"
+
+[items.locales."zh-CN"]
+title = "选择适合设备的安同 OS 安装方式"
+subtitle = "查阅系统需求、LiveKit、WSL 和手动安装指南。"
+
+[items.locales.en]
+title = "Choose an AOSC OS installation method"
+subtitle = "Check system requirements and find instructions for LiveKit, WSL, or manual installation."
+
+[[items]]
+id = "packaging-basics"
+date = 2026-11-20
+url = "https://wiki.aosc.io/zh/developer/packaging/basics/"
+
+[items.locales."zh-CN"]
+title = "制作第一个安同 OS 软件包"
+subtitle = "跟着 GNU Hello 示例编写打包配置，构建并测试软件包。"
+
+[items.locales.en]
+title = "Build your first AOSC OS package"
+subtitle = "Write a recipe for GNU Hello, build the package, and test it."

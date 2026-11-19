@@ -71,10 +71,18 @@ class AbbsBuildTests(unittest.TestCase):
             self.build(self.base / "out")
 
     def test_empty_manual_catalog_still_has_generated_inventory(self):
+        root = self.base / "catalog"
+        manual = root / "manual"
+        (manual / "apps").mkdir(parents=True)
+        (manual / "collections").mkdir()
+        shutil.copyfile(ROOT / "manual/repository.toml", manual / "repository.toml")
+        shutil.copytree(ROOT / "manual/taxonomy", manual / "taxonomy")
         output = self.base / "out"
-        asmr.build_catalog(ROOT, output, abbs_tree=self.tree)
+        asmr.build_catalog(root, output, abbs_tree=self.tree)
         inventory = json.loads((output / "abbs-packages.json").read_text())
         self.assertIn("sample-app", inventory["packages"])
+        homepage = json.loads((output / "homepage.json").read_text())
+        self.assertEqual({"schema_version": 1, "hero": None, "essentials": None, "guides": {"items": []}}, homepage)
         self.assertEqual(["sample-app"], [app["id"] for app in json.loads((output / "index.json").read_text())["apps"]])
 
 

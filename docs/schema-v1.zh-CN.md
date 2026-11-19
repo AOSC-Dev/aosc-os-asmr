@@ -197,17 +197,53 @@ title = "装机必备"
 
 构建器会拒绝重复 ID 和不存在的应用。
 
-## 5. 生成物
+## 5. 首页
+
+首页包含一张头图、一个装机必备集合和一组有序的技巧指南。各栏目独立维护。
+
+| 源文件 | 字段 |
+| --- | --- |
+| `manual/homepage/hero.toml` | `schema_version = 1`、`target`、`locales`、`image`。推荐应用时可省略 `image` 并复用应用头图。 |
+| `manual/collections/essentials.toml` | 使用第 4 节的集合格式。首页引用 ID 为 `essentials` 且 `visibility = "listed"` 的集合，按 `apps` 数组顺序展示。 |
+| `manual/homepage/guides.toml` | `schema_version = 1` 和有序数组 `items`。可选的 `more_url` 指向指南总目录。每个 `[[items]]` 条目包括唯一的 `id`、`date`、`url` 和 `locales`。空列表写作 `items = []`。 |
+
+头图的 `target` 表只能填写一个键。`app` 指向应用 ID，`collection` 指向集合 ID，
+`url` 指向 HTTPS 网页。构建器会在合并后的目录中校验引用的 ID。
+专用图片放在 `manual/homepage/assets/`，对应字段写作 `image = "assets/<文件名>"`。
+图片格式和大小限制见第 2.2 节。若推荐的应用已有会随目录发布的 `media.hero`，
+省略 `image` 即可使用该图。
+
+头图和每篇指南都要提供仓库默认语言的 `locales.<语言>.title`。每种翻译必填 `title`，
+可选填 `subtitle`。指南 ID 的可用字符与应用 ID 相同。`date` 填写 ASMR 收录该指南的日期，
+格式为 `YYYY-MM-DD`。构建器保留手写顺序。指南的 `url` 和总目录的 `more_url` 均使用
+HTTPS。完整示例见[首页头图](../manual/homepage/hero.toml)和[指南清单](../manual/homepage/guides.toml)。
+
+## 6. 生成物
 
 `asmr build` 生成：
 
 ```text
 dist/v1/index.json
 dist/v1/collections.json
+dist/v1/homepage.json
+dist/v1/homepage/assets/
 dist/v1/apps/<id>.json
 dist/v1/apps/<id>/assets/
 dist/v1/manifest.json
 ```
+
+客户端读取 `index.json` 的 `homepage` 字段，即可找到同一次构建的
+`homepage.json`。即使各栏目都没有内容，构建器也会生成该文件：
+
+```json
+{"schema_version": 1, "hero": null, "essentials": null, "guides": {"items": []}}
+```
+
+有头图时，`hero` 包含 `target`、`locales` 和相对于 `dist/v1/` 的图片路径 `image`。
+专用图使用 `homepage/assets/…`，复用的应用图沿用 `apps/<id>/assets/…`。
+`essentials` 是供客户端在 `collections.json` 中查找的集合 ID，集合缺失或隐藏时值为 `null`。
+`guides.items` 保留源文件中的字段和顺序，日期以字符串输出。填写的总目录链接输出到
+`guides.more_url`。首页 JSON 和发布的图片都纳入 manifest 的文件清单。
 
 `manifest.json` 记录由全部原始 Metadata 自动计算的 `catalog_revision`、最低客户端版本、
 源 Git 提交、生成时间，以及每个生成文件的 SHA-256 和字节数。生成物不得人工编辑或

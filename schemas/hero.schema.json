@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aosc.io/asmr/schemas/hero.schema.json",
+  "title": "ASMR homepage hero",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "target", "locales"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "maxProperties": 1,
+      "properties": {
+        "app": { "type": "string", "pattern": "^[a-z0-9][a-z0-9+._-]*$" },
+        "collection": { "type": "string", "pattern": "^[a-z0-9][a-z0-9+._-]*$" },
+        "url": { "type": "string", "format": "uri", "pattern": "^https://" }
+      }
+    },
+    "image": {
+      "type": "string",
+      "pattern": "^assets/.+",
+      "description": "Image under manual/homepage/assets/. An app target can instead use its media.hero."
+    },
+    "locales": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title"],
+        "properties": {
+          "title": { "type": "string", "minLength": 1 },
+          "subtitle": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  },
+  "anyOf": [
+    { "required": ["image"] },
+    { "properties": { "target": { "required": ["app"] } } }
+  ]
+}

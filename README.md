@@ -14,7 +14,7 @@ ASMR owns:
 - publisher relationships, support, availability, privacy, and compatibility
   disclosures;
 - AOSC repository package bindings or external acquisition entry points;
-- curated collections such as featured and essential applications.
+- the homepage hero, ordered Essentials collection, and Tips & Guides links.
 
 ASMR does **not** own installed state, current versions, upgrade availability,
 operation plans, progress, or logs. Those runtime facts come from `omactl` and
@@ -70,7 +70,10 @@ manual/repository.toml          Repository compatibility policy
 manual/apps/<id>/app.toml       Handwritten overrides and external apps
 manual/apps/<id>/description.*.md  Localized descriptions
 manual/apps/<id>/assets/        Icons, hero images, and screenshots
-manual/collections/*.toml       Curated lists of application IDs
+manual/collections/*.toml       Ordered app lists, including essentials.toml
+manual/homepage/hero.toml       Homepage banner, destination, and localized copy
+manual/homepage/assets/         Artwork for the homepage banner
+manual/homepage/guides.toml     Ordered Tips & Guides links
 manual/taxonomy/categories.toml Category definitions
 examples/manual/               Example inputs with the same layout
 schemas/                       JSON Schema files for editor support
@@ -80,5 +83,5 @@ dist/v1/                       Generated JSON and copied media
 
 Production metadata must not be duplicated into handwritten indexes.
 `asmr build` generates `index.json`, application detail documents,
-collections, assets, and the digest manifest.
+collections, `homepage.json`, assets, and the digest manifest.
 

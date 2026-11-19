@@ -1,0 +1,11 @@
+schema_version = 1
+target = { collection = "essentials" }
+image = "assets/essentials.svg"
+
+[locales."zh-CN"]
+title = "装机必备"
+subtitle = "用 Firefox 浏览网页，用 VLC 播放影音。"
+
+[locales.en]
+title = "Essentials"
+subtitle = "Browse the web with Firefox and play your media with VLC."

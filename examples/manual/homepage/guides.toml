@@ -1,0 +1,13 @@
+schema_version = 1
+more_url = "https://wiki.aosc.io/zh/"
+
+[[items]]
+id = "installation"
+date = 2026-11-20
+url = "https://wiki.aosc.io/zh/aosc-os/installation/"
+
+[items.locales."zh-CN"]
+title = "安同 OS 安装指南"
+
+[items.locales.en]
+title = "AOSC OS installation guide"

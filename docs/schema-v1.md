@@ -211,17 +211,60 @@ title = "Essentials"
 
 The builder rejects duplicate IDs and references to unknown applications.
 
-## 5. Generated artifacts
+## 5. Homepage
+
+The homepage has one hero banner, an Essentials collection, and an ordered list
+of tips and guides. Each section has its own handwritten source.
+
+| Source | Fields |
+| --- | --- |
+| `manual/homepage/hero.toml` | `schema_version = 1`, `target`, `locales`, and an optional `image` for an app target. |
+| `manual/collections/essentials.toml` | The collection defined in section 4. Its `apps` list sets display order. A listed collection with ID `essentials` appears on the homepage. |
+| `manual/homepage/guides.toml` | `schema_version = 1`, an ordered `items` array, and optional `more_url` for the guide directory. Each `[[items]]` entry has a unique `id`, `date`, `url`, and `locales`. An empty list is written as `items = []`. |
+
+The hero's `target` table takes exactly one key. Use `app` for a catalog app ID,
+`collection` for a collection ID, or `url` for an HTTPS page. The builder checks
+IDs against the merged catalog. Supply `image = "assets/<filename>"` for
+dedicated artwork under `manual/homepage/assets/`. Section 2.2 lists supported
+image formats and the file size limit. An app target may omit `image` if the app
+already has a published `media.hero`.
+
+The hero and each guide require `locales.<locale>.title` for the repository's
+default locale. Each translation includes a title and may include a `subtitle`.
+Guide IDs use the same characters as app IDs. The `date` field records the day
+ASMR added the guide, in `YYYY-MM-DD` format. The builder preserves the order
+in the file. Both the guide's `url` and the directory's `more_url` use HTTPS.
+See the [hero](../manual/homepage/hero.toml) and [guide list](../manual/homepage/guides.toml)
+for complete source examples.
+
+## 6. Generated artifacts
 
 `asmr build` generates:
 
 ```text
 dist/v1/index.json
 dist/v1/collections.json
+dist/v1/homepage.json
+dist/v1/homepage/assets/
 dist/v1/apps/<id>.json
 dist/v1/apps/<id>/assets/
 dist/v1/manifest.json
 ```
+
+Clients follow the `homepage` path in `index.json` to `homepage.json` from
+the same build. The file is generated even when the homepage has no content:
+
+```json
+{"schema_version": 1, "hero": null, "essentials": null, "guides": {"items": []}}
+```
+
+When present, `hero` contains `target`, `locales`, and the resolved `image`
+path relative to `dist/v1/`. Dedicated artwork uses `homepage/assets/…`.
+An app's existing hero keeps its `apps/<id>/assets/…` path. The `essentials`
+value is the collection ID to look up in `collections.json`, or `null` for a
+hidden or absent collection. Guide entries retain their source fields and order,
+with dates serialized as strings. The optional directory link is emitted as
+`guides.more_url`. The manifest includes the homepage JSON and published images.
 
 `manifest.json` records the automatically computed `catalog_revision`, minimum
 client version, source Git commit, generation timestamp, and SHA-256 digest and

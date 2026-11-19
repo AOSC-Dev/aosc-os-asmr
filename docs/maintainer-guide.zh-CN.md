@@ -134,6 +134,16 @@ apps = ["firefox", "vendor-app"]
 不要复制应用名称、简介或图片。搜索索引会自动包含所有 `listed + active` 应用，不需要
 维护单独的 `index.toml`。
 
+### 维护首页
+
+| 想改的内容 | 维护入口 |
+| --- | --- |
+| 换首页头图 | 在 [hero.toml](../manual/homepage/hero.toml) 填写标题和跳转目标。专用图片放在 `manual/homepage/assets/`。推荐应用时，可省略 `image` 复用该应用已有的头图。 |
+| 调整装机必备 | 在 [essentials.toml](../manual/collections/essentials.toml) 增删或调换 `apps` 中的应用 ID。首页按列表顺序展示。 |
+| 添加或调整技巧指南 | 在 [guides.toml](../manual/homepage/guides.toml) 按展示顺序编辑 `[[items]]`。如需链接到指南总目录，在文件顶层设置 `more_url`。 |
+
+每条标题都要提供仓库默认语言的文案，其他语言的翻译写在同一文件。已验证可用性、非原生运行、遥测等应用标记由各应用自己的 `disclosures` 定义。见[首页字段定义](schema-v1.zh-CN.md#5-首页)。
+
 ## 7. 本地检查
 
 提交前运行：
@@ -148,8 +158,10 @@ make test
 
 ```bash
 python3 tools/asmr.py build --abbs-tree ../aosc-os-abbs
-find dist/v1 -type f
+python3 -m json.tool dist/v1/homepage.json
 ```
+
+生产目录的装机必备清单引用 ABBS 应用，因此校验和构建都需要传入 `--abbs-tree`。离线预览可执行 `python3 tools/asmr.py build --root examples`，查看 `examples/dist/v1/homepage.json`。
 
 常见错误：
 
