@@ -8,6 +8,12 @@ This document defines the ASMR v1 source and generated-artifact contract.
 `tools/asmr.py` is the normative implementation. The JSON Schema documents
 under `schemas/` provide editor completion.
 
+Authoritative handwritten inputs live under `manual/`, with examples under
+`examples/manual/`. `--root` still selects the repository root or `examples`.
+CI reads ABBS `stable` and writes merged JSON and media under ignored `dist/v1/`.
+Runtime state comes from the package manager. See the [build workflow](abbs-overlays.md)
+for input responsibilities and output restrictions.
+
 ## 1. Authority boundaries
 
 | Information | Authority |
@@ -25,7 +31,7 @@ DEB package name.
 
 ## 2. Application documents
 
-Each application lives at `apps/<id>/app.toml`. The `id` must match the
+Each application lives at `manual/apps/<id>/app.toml`. The `id` must match the
 directory name and may contain lowercase ASCII letters, digits, periods,
 underscores, plus signs, and hyphens.
 
@@ -190,7 +196,7 @@ This kind must not define `package`, `artifact`, or `install`.
 
 ## 4. Collections
 
-`collections/<id>.toml` contains application IDs only and does not duplicate
+`manual/collections/<id>.toml` contains application IDs only and does not duplicate
 names, summaries, or media:
 
 ```toml

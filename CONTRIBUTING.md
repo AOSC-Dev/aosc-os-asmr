@@ -7,10 +7,16 @@ ASMR uses ABBS-generated defaults with field-level handwritten overrides. Entrie
 Read the [maintainer guide](docs/maintainer-guide.md) before adding or changing
 application metadata.
 
+Authoritative handwritten inputs live under `manual/`, with examples under
+`examples/manual/`. `--root` still selects the repository root or `examples`.
+CI reads ABBS `stable` and writes merged JSON and media under ignored `dist/v1/`.
+Runtime state comes from the package manager. See the [build workflow](docs/abbs-overlays.md)
+for input responsibilities and output restrictions.
+
 Run at least the following commands before opening a pull request:
 
 ```bash
-make check
+make check ABBS_TREE=../aosc-os-abbs
 make check-examples
 make test
 ```

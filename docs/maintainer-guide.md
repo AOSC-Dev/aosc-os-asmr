@@ -7,9 +7,15 @@ With an ABBS input, handwritten files are partial overlays. The complete field c
 This guide is for maintainers who add software to AOSKA search, application
 detail pages, and curated collections.
 
+Authoritative handwritten inputs live under `manual/`, with examples under
+`examples/manual/`. `--root` still selects the repository root or `examples`.
+CI reads ABBS `stable` and writes merged JSON and media under ignored `dist/v1/`.
+Runtime state comes from the package manager. See the [build workflow](abbs-overlays.md)
+for input responsibilities and output restrictions.
+
 ## 1. Core rules
 
-1. Maintain one `apps/<id>/app.toml` source file for each application.
+1. Maintain one `manual/apps/<id>/app.toml` source file for each application.
 2. Never maintain search indexes, application detail JSON, or duplicated
    collection copy and icons by hand.
 3. Keep the application ID separate from DEB package names and connect them
@@ -52,10 +58,10 @@ python3 tools/asmr.py new vendor-app \
 The tool creates:
 
 ```text
-apps/<id>/app.toml
-apps/<id>/description.zh-CN.md
-apps/<id>/assets/icon.svg
-apps/<id>/assets/hero.svg
+manual/apps/<id>/app.toml
+manual/apps/<id>/description.zh-CN.md
+manual/apps/<id>/assets/icon.svg
+manual/apps/<id>/assets/hero.svg
 ```
 
 Replace every `TODO:` value before committing. CI rejects incomplete
@@ -133,7 +139,7 @@ Use `external-link`. The UI may only offer actions such as “Visit website” o
 
 ## 6. Add the application to a collection
 
-Edit `collections/<collection>.toml` and add only the application ID:
+Edit `manual/collections/<collection>.toml` and add only the application ID:
 
 ```toml
 apps = ["firefox", "vendor-app"]

