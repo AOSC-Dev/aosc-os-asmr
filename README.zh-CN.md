@@ -25,6 +25,15 @@ Aoska 通过 oma 的 D-Bus 服务 amo（`io.aosc.Amo`）查询软件包状态、
 `examples`。本地构建写入 Git 忽略的 `dist/v1/`。CI 从 ABBS `stable` 生成缺省值，在临时目录中构建同一布局并上传 artifact。运行时状态由包管理服务提供。目录职责和输出限制见
 [生成流程](docs/abbs-overlays.zh-CN.md)。
 
+## 目录渠道
+
+| 渠道 | 目录地址 | 发布方式 |
+| --- | --- | --- |
+| dev | `https://aosc-dev.github.io/aosc-os-asmr/v1/` | `main` 上的推送、定时构建或手动运行通过验证后，CI 将 ABBS 目录发布到 GitHub Pages。 |
+| stable | `https://repo.aosc.io/asmr/v1/` | AOSC 官方仓库的暂定地址，待上线。 |
+
+首次发布 dev 时，在仓库 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**。在 `main` 运行 CI，部署完成后检查站点上的 `v1/index.json`。PR 和其他分支只生成测试产物。示例目录保留在常规 CI artifact 中。
+
 ## 快速开始
 
 要求 Python 3.11 或更新版本；没有第三方 Python 依赖。
