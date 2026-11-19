@@ -90,11 +90,11 @@ manual/apps/<id>/assets/hero.svg
 
 ### AOSC 仓库中已有包
 
-使用 `aosc-repository`，包名必须是 omactl/oma 可识别的稳定名称：
+使用 `aosc-repository`，填写 amo 可在 AOSC 仓库中查到的包名。
 
 ```toml
 [installers.package]
-backend = "omactl"
+backend = "amo"
 names = ["firefox"]
 ```
 
@@ -116,8 +116,8 @@ names = ["firefox"]
 - 预期 DEB 包名和架构；
 - 再分发、自动化和许可证政策。
 
-不要填写页面 CSS selector，不要尝试绕过登录、验证码、许可证确认或上游访问限制。
-AOSKA 应接收浏览器产生的下载文件，而不是记录临时 URL 后重新爬取。
+Aoska 打开上游页面，由用户在浏览器中下载文件。临时 URL 和浏览器自动化脚本不得写入目录。
+两种外部 DEB 条目均只描述获取策略和预期制品。
 
 ### AOSKA 不能负责安装
 
@@ -190,7 +190,6 @@ PR 描述应包含：
 - `publisher.relationship`
 - 下载和跳转域名
 - `expected_package_names`
-- `processor` 或 `capability`
 
 CI 通过只代表格式和静态安全约束正确，不代表软件值得信任，也不代替人工审核。
 

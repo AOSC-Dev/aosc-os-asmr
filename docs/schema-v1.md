@@ -22,9 +22,9 @@ for input responsibilities and output restrictions.
 | Publisher relationships and editorial disclosures | ASMR |
 | Installation entry points available in the catalog | ASMR |
 | AOSC package names or expected external DEB package names | ASMR |
-| Installed state, upgrade state, current version, and actual installed size | omactl/oma |
+| Package state and installed and candidate versions | amo |
 | Actual version, architecture, and digest of an external DEB | Downloaded artifact |
-| Operation plans, status, logs, and results | omactl |
+| Transaction plans, progress, and results | amo |
 
 An application ID is a stable catalog identity and is not required to equal a
 DEB package name.
@@ -106,10 +106,12 @@ unknown state.
 
 ## 3. Installer types
 
+For both DEB download types, the catalog describes how to obtain the file and
+which package names and architectures to expect in its control fields.
+
 ### 3.1 `aosc-repository`
 
-The software is provided by an AOSC repository and is installed and upgraded
-by omactl using stable package names.
+Aoska passes the AOSC repository package names to amo for installation and updates.
 
 ```toml
 [[installers]]
@@ -120,12 +122,11 @@ architectures = ["amd64", "arm64"]
 update_policy = "managed"
 
 [installers.package]
-backend = "omactl"
+backend = "amo"
 names = ["example-app"]
 ```
 
-This kind must not define `acquisition`, `artifact`, or a local install
-processor.
+The repository supplies the package, so omit `acquisition` and `artifact`.
 
 ### 3.2 `direct-deb`
 
@@ -165,11 +166,6 @@ format = "deb"
 expected_package_names = ["example-app"]
 architectures = ["amd64"]
 version_source = "deb-control"
-
-[installers.install]
-backend = "omactl"
-capability = "run.install-local.v1"
-processor = "deb-local-v1"
 ```
 
 Metadata must not contain page selectors, scraping rules, cookies, temporary
@@ -192,7 +188,7 @@ update_policy = "external"
 landing_url = "https://vendor.example/download"
 ```
 
-This kind must not define `package`, `artifact`, or `install`.
+This kind uses a landing page and omits `package` and `artifact`.
 
 ## 4. Collections
 

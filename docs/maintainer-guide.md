@@ -100,12 +100,11 @@ scaffolds.
 
 ### Package available from the AOSC repository
 
-Use `aosc-repository`. Package names must be stable identifiers recognized by
-omactl and oma:
+Use `aosc-repository` with the package names that amo resolves in the AOSC repository.
 
 ```toml
 [installers.package]
-backend = "omactl"
+backend = "amo"
 names = ["firefox"]
 ```
 
@@ -127,10 +126,9 @@ Use `browser-assisted-deb`. Metadata describes only:
 - expected DEB package names and architectures;
 - redistribution, automation, and license-acceptance policy.
 
-Do not add CSS selectors or attempt to bypass authentication, captchas, license
-confirmation, or upstream access controls. AOSKA should receive the file
-created by the browser instead of recording a temporary URL and scraping it
-again.
+Aoska opens the landing page so the user can download the file. Keep temporary
+URLs and browser automation out of the catalog. For both DEB types, the
+metadata ends with the expected artifact fields.
 
 ### AOSKA cannot install the software
 
@@ -211,7 +209,6 @@ Treat changes to the following fields as supply-chain-sensitive:
 - `publisher.relationship`
 - navigation and download origins
 - `expected_package_names`
-- `processor` or `capability`
 
 Passing CI proves only that the metadata is structurally valid and satisfies
 static safety constraints. It does not establish that the software is

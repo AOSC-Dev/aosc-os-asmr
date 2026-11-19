@@ -92,6 +92,17 @@ class AsmrToolTests(unittest.TestCase):
             )
         )
 
+    def test_repository_installer_requires_amo_backend(self) -> None:
+        temporary, root = self.copy_examples()
+        self.addCleanup(temporary.cleanup)
+        path = root / "manual/apps/sample-repository-app/app.toml"
+        source = path.read_text(encoding="utf-8")
+        self.assertIn('backend = "amo"', source)
+        path.write_text(source.replace('backend = "amo"', 'backend = "legacy-cli"'), encoding="utf-8")
+
+        _, problems = asmr.validate_catalog(root)
+        self.assertIn("installers[0].package.backend", [problem.field for problem in problems])
+
     def test_metadata_rejects_executable_script_fields(self) -> None:
         temporary, root = self.copy_examples()
         self.addCleanup(temporary.cleanup)
@@ -196,6 +207,13 @@ class AsmrToolTests(unittest.TestCase):
                     _catalog, problems = asmr.validate_catalog(root)
 
                 self.assertEqual([], problems)
+                if kind in {"browser-assisted-deb", "direct-deb"}:
+                    self.assertIn("[installers.acquisition]", text)
+                    self.assertIn("[installers.artifact]", text)
+                    self.assertNotIn("[installers.install]", text)
+                    path.write_text(text + "\n[installers.install]\n", encoding="utf-8")
+                    _, problems = asmr.validate_catalog(root)
+                    self.assertIn("installers[0].install", [problem.field for problem in problems])
 
 
 if __name__ == "__main__":

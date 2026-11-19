@@ -20,9 +20,9 @@ JSON Schema 用于编辑器补全。
 | 发行方关系和编辑性声明 | ASMR |
 | Catalog 中可用的安装入口 | ASMR |
 | AOSC 仓库包名或外部 DEB 预期包名 | ASMR |
-| 已安装、可升级、当前版本和实际安装大小 | omactl/oma |
+| 软件包状态、已安装版本和候选版本 | amo |
 | 外部 DEB 的真实版本、架构和校验值 | 下载后的制品 |
-| 操作计划、状态、日志和结果 | omactl |
+| 事务计划、进度和结果 | amo |
 
 应用 ID 是稳定的 Catalog 身份，不要求等于 DEB 包名。
 
@@ -98,9 +98,11 @@ notes = []
 
 ## 3. Installer 类型
 
+两种外部 DEB 入口都只描述如何获取文件，以及校验 DEB control 字段时预期的包名和架构。
+
 ### 3.1 `aosc-repository`
 
-软件由 AOSC 仓库提供，通过 omactl 按稳定包名安装和升级。
+Aoska 按 AOSC 仓库包名通过 amo 安装和升级软件。
 
 ```toml
 [[installers]]
@@ -111,11 +113,11 @@ architectures = ["amd64", "arm64"]
 update_policy = "managed"
 
 [installers.package]
-backend = "omactl"
+backend = "amo"
 names = ["example-app"]
 ```
 
-不得同时定义 `acquisition`、`artifact` 或本地安装处理器。
+软件包由仓库提供，省略 `acquisition` 和 `artifact`。
 
 ### 3.2 `direct-deb`
 
@@ -154,11 +156,6 @@ format = "deb"
 expected_package_names = ["example-app"]
 architectures = ["amd64"]
 version_source = "deb-control"
-
-[installers.install]
-backend = "omactl"
-capability = "run.install-local.v1"
-processor = "deb-local-v1"
 ```
 
 Metadata 不得包含网页选择器、爬取规则、Cookie、临时 Token、Shell 命令或自动点击脚本。
@@ -179,7 +176,7 @@ update_policy = "external"
 landing_url = "https://vendor.example/download"
 ```
 
-该类型不得定义 `package`、`artifact` 或 `install`。
+该类型使用网页入口，省略 `package` 和 `artifact`。
 
 ## 4. Collections
 

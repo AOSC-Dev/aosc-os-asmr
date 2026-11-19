@@ -39,7 +39,6 @@ DISCLOSURE_VALUES = {
     "service": {"full", "limited", "unavailable", "unknown"},
     "support": {"aosc", "upstream", "community", "none", "unknown"},
 }
-PROCESSORS = {"deb-local-v1"}
 FORBIDDEN_METADATA_KEYS = {
     "command",
     "commands",
@@ -377,28 +376,6 @@ def _validate_artifact(
     _string_list(artifact, "mime_types", path, f"{field}.mime_types", problems, required=False)
 
 
-def _validate_install(
-    install: dict[str, Any],
-    path: Path,
-    field: str,
-    problems: list[Problem],
-) -> None:
-    _reject_unknown_keys(
-        install,
-        {"backend", "capability", "processor"},
-        path,
-        field,
-        problems,
-    )
-    _enum(install, "backend", {"omactl"}, path, f"{field}.backend", problems)
-    capability = _string(install, "capability", path, f"{field}.capability", problems)
-    if capability is not None and capability != "run.install-local.v1":
-        problems.append(
-            Problem(path, f"{field}.capability", "external DEB installers require run.install-local.v1")
-        )
-    _enum(install, "processor", PROCESSORS, path, f"{field}.processor", problems)
-
-
 def _validate_installer(
     installer: dict[str, Any],
     path: Path,
@@ -418,7 +395,6 @@ def _validate_installer(
             "policy",
             "acquisition",
             "artifact",
-            "install",
         },
         path,
         field,
@@ -451,14 +427,14 @@ def _validate_installer(
             )
         package = _table(installer, "package", path, f"{field}.package", problems)
         _reject_unknown_keys(package, {"backend", "names"}, path, f"{field}.package", problems)
-        _enum(package, "backend", {"omactl"}, path, f"{field}.package.backend", problems)
+        _enum(package, "backend", {"amo"}, path, f"{field}.package.backend", problems)
         names = _string_list(package, "names", path, f"{field}.package.names", problems)
         for name in names:
             if not PACKAGE_NAME_RE.fullmatch(name):
                 problems.append(Problem(path, f"{field}.package.names", f"invalid package name: {name}"))
-        if "acquisition" in installer or "artifact" in installer or "install" in installer:
+        if "acquisition" in installer or "artifact" in installer:
             problems.append(
-                Problem(path, field, "aosc-repository must not define acquisition, artifact, or install")
+                Problem(path, field, "aosc-repository must not define acquisition or artifact")
             )
     elif kind in {"direct-deb", "browser-assisted-deb"}:
         if update_policy != "repeat-acquisition":
@@ -565,8 +541,8 @@ def _validate_installer(
             )
         artifact = _table(installer, "artifact", path, f"{field}.artifact", problems)
         _validate_artifact(artifact, path, f"{field}.artifact", problems)
-        install = _table(installer, "install", path, f"{field}.install", problems)
-        _validate_install(install, path, f"{field}.install", problems)
+        if "package" in installer:
+            problems.append(Problem(path, f"{field}.package", f"{kind} must not define a repository package"))
     elif kind == "external-link":
         if update_policy != "external":
             problems.append(
@@ -582,9 +558,9 @@ def _validate_installer(
             f"{field}.acquisition.landing_url",
             problems,
         )
-        if "artifact" in installer or "install" in installer or "package" in installer:
+        if "artifact" in installer or "package" in installer:
             problems.append(
-                Problem(path, field, "external-link must not define package, artifact, or install")
+                Problem(path, field, "external-link must not define package or artifact")
             )
     return installer_id, kind
 
@@ -925,7 +901,7 @@ def _generated_app(name: str, facts: dict[str, Any], categories: dict[str, Any])
         "media": {}, "disclosures": {key: "unknown" for key in DISCLOSURE_VALUES},
         "installers": [{"id": "aosc", "kind": "aosc-repository", "priority": 100,
                         "architectures": [], "update_policy": "managed",
-                        "package": {"backend": "omactl", "names": [name]}}],
+                        "package": {"backend": "amo", "names": [name]}}],
     }
 
 
@@ -1407,11 +1383,6 @@ format = "deb"
 expected_package_names = ["{app_id}"]
 architectures = ["amd64"]
 version_source = "deb-control"
-
-[installers.install]
-backend = "omactl"
-capability = "run.install-local.v1"
-processor = "deb-local-v1"
 """
     else:
         installer = """[[installers]]
