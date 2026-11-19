@@ -1,0 +1,8 @@
+schema_version = 1
+target = { app = "sample-repository-app" }
+
+[locales."zh-CN"]
+title = "仓库软件示例"
+
+[locales.en]
+title = "Repository App Example"

@@ -149,6 +149,19 @@ Do not duplicate names, summaries, or images. The generated search index
 already contains every `listed + active` application; there is no handwritten
 `index.toml`.
 
+### Edit the homepage
+
+| Change | Where to edit |
+| --- | --- |
+| Feature an app, a collection, or a web page | Set the destination and localized headline in [hero.toml](../manual/homepage/hero.toml). Place dedicated artwork in `manual/homepage/assets/`, or omit `image` to use the target app's existing hero. |
+| Change Essentials recommendations | Edit the `apps` list in [essentials.toml](../manual/collections/essentials.toml). The homepage follows its order. |
+| Add or reorder a tip | Edit the `[[items]]` entries in [guides.toml](../manual/homepage/guides.toml). Set `more_url` at the top of the file to link to a guide directory. |
+
+Use the repository's default language for every headline and add translations in
+the same file. Application badges such as verified availability, compatibility
+layer use and telemetry belong in the application's `disclosures` table.
+See the [homepage field definitions](schema-v1.md#5-homepage).
+
 ## 7. Run local checks
 
 Before submitting:
@@ -163,8 +176,13 @@ To inspect generated output:
 
 ```bash
 python3 tools/asmr.py build --abbs-tree ../aosc-os-abbs
-find dist/v1 -type f
+python3 -m json.tool dist/v1/homepage.json
 ```
+
+The production Essentials list references ABBS packages, so use the same
+`--abbs-tree` input for production checks and builds. To preview the sample
+homepage offline, run `python3 tools/asmr.py build --root examples` and open
+`examples/dist/v1/homepage.json`.
 
 Common validation failures include:
 

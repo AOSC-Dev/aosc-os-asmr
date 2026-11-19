@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aosc.io/asmr/schemas/guides.schema.json",
+  "title": "ASMR homepage guides",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "items"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "more_url": { "type": "string", "format": "uri", "pattern": "^https://" },
+    "items": {
+      "type": "array",
+      "description": "Guides in display order. Each ID must be unique.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "url", "date", "locales"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9+._-]*$" },
+          "url": { "type": "string", "format": "uri", "pattern": "^https://" },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date this guide was featured on the ASMR homepage (YYYY-MM-DD)."
+          },
+          "locales": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["title"],
+              "properties": {
+                "title": { "type": "string", "minLength": 1 },
+                "subtitle": { "type": "string", "minLength": 1 }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

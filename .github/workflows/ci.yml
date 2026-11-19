@@ -72,6 +72,12 @@ jobs:
             --output "${RUNNER_TEMP}/asmr-examples/v1" \
             --source-commit "${GITHUB_SHA}"
 
+      - name: Check homepage artifacts before upload
+        run: |
+          for catalog in "${RUNNER_TEMP}/asmr-dist/v1" "${RUNNER_TEMP}/asmr-examples/v1"; do
+            test -s "$catalog/homepage.json"
+          done
+
       - name: Upload generated catalogs
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:

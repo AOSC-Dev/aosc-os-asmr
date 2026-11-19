@@ -94,6 +94,7 @@ class Catalog:
     apps: dict[str, dict[str, Any]]
     app_dirs: dict[str, Path]
     collections: dict[str, dict[str, Any]]
+    homepage: dict[str, Any]
     abbs_inventory: dict[str, Any] | None = None
 
 
@@ -766,6 +767,124 @@ def _validate_collection(
     return data
 
 
+def _homepage_file(path: Path, fields: set[str], problems: list[Problem]) -> dict[str, Any] | None:
+    if not path.exists():
+        return None
+    data = _load_toml(path, problems)
+    if data is not None:
+        _reject_unknown_keys(data, fields | {"schema_version"}, path, "", problems)
+        _reject_unsafe_or_placeholder_values(data, path, "", problems)
+        if type(data.get("schema_version")) is not int or data["schema_version"] != 1:
+            problems.append(Problem(path, "schema_version", "must equal 1"))
+    return data
+
+
+def _homepage_locales(
+    data: dict[str, Any], default_locale: str, path: Path, field: str, problems: list[Problem]
+) -> dict[str, Any]:
+    locales = _table(data, "locales", path, field, problems)
+    if isinstance(default_locale, str) and default_locale not in locales:
+        problems.append(Problem(path, field, f"must contain default locale {default_locale!r}"))
+    for locale in locales:
+        prefix = f"{field}.{locale}"
+        translation = _table(locales, locale, path, prefix, problems)
+        _reject_unknown_keys(translation, {"title", "subtitle"}, path, prefix, problems)
+        _string(translation, "title", path, f"{prefix}.title", problems)
+        if "subtitle" in translation:
+            _string(translation, "subtitle", path, f"{prefix}.subtitle", problems)
+    return locales
+
+
+def _read_hero(
+    path: Path, apps: dict[str, Any], collections: dict[str, Any], default_locale: str,
+    problems: list[Problem],
+) -> dict[str, Any] | None:
+    data = _homepage_file(path, {"target", "image", "locales"}, problems)
+    if data is None:
+        return None
+    target = _table(data, "target", path, "target", problems)
+    _reject_unknown_keys(target, {"app", "collection", "url"}, path, "target", problems)
+    if len(target) != 1:
+        problems.append(Problem(path, "target", "specify exactly one of app, collection, or url"))
+    if "url" in target:
+        _https_url(target["url"], path, "target.url", problems)
+    for key, catalog in (("app", apps), ("collection", collections)):
+        if key in target:
+            value = target[key]
+            if not isinstance(value, str) or value not in catalog:
+                problems.append(Problem(path, f"target.{key}", f"references unknown {key}: {value}"))
+
+    app_id = target.get("app")
+    relative = data.get("image")
+    asset_dir = path.parent
+    output_dir = "homepage"
+    if "image" not in data and isinstance(app_id, str) and app_id in apps:
+        media = apps[app_id].get("media")
+        relative = media.get("hero") if isinstance(media, dict) else None
+        asset_dir = path.parents[1] / "apps" / app_id
+        output_dir = f"apps/{app_id}"
+    image = None
+    if relative is None:
+        problems.append(Problem(path, "image", "required unless the target app supplies media.hero"))
+    elif not isinstance(relative, str) or (
+        not Path(relative).is_relative_to("assets") or ".." in Path(relative).parts
+    ):
+        problems.append(Problem(path, "image", "must be a relative path under assets/"))
+    else:
+        asset = Path(relative).relative_to("assets")
+        if _asset_path(asset_dir / "assets", asset.as_posix(), path, "image", problems):
+            image = f"{output_dir}/assets/{asset.as_posix()}"
+    locales = _homepage_locales(data, default_locale, path, "locales", problems)
+    return {"target": target, "image": image, "locales": locales}
+
+
+def _read_guides(path: Path, default_locale: str, problems: list[Problem]) -> dict[str, Any]:
+    data = _homepage_file(path, {"items", "more_url"}, problems)
+    guides: dict[str, Any] = {"items": []}
+    if data is None:
+        return guides
+    if "more_url" in data:
+        guides["more_url"] = _https_url(data["more_url"], path, "more_url", problems)
+    if "items" not in data:
+        problems.append(Problem(path, "items", "must be an array of tables (which may be empty)"))
+    items = _list_of_tables(data, "items", path, "items", problems, required=False)
+    ids: set[str] = set()
+    for index, item in enumerate(items):
+        prefix = f"items[{index}]"
+        _reject_unknown_keys(item, {"id", "url", "date", "locales"}, path, prefix, problems)
+        guide_id = item.get("id")
+        if not isinstance(guide_id, str) or not APP_ID_RE.fullmatch(guide_id):
+            problems.append(Problem(path, f"{prefix}.id", "must match [a-z0-9][a-z0-9+._-]*"))
+        elif guide_id in ids:
+            problems.append(Problem(path, f"{prefix}.id", f"duplicate guide ID: {guide_id}"))
+        else:
+            ids.add(guide_id)
+        _https_url(item.get("url"), path, f"{prefix}.url", problems)
+        date = item.get("date")
+        if isinstance(date, dt.datetime) or (
+            isinstance(date, str) and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date)
+        ):
+            problems.append(Problem(path, f"{prefix}.date", "must be a calendar date (YYYY-MM-DD)"))
+        else:
+            _date(item, "date", path, f"{prefix}.date", problems)
+        _homepage_locales(item, default_locale, path, f"{prefix}.locales", problems)
+    guides["items"] = items
+    return guides
+
+
+def _read_homepage(
+    manual_root: Path, apps: dict[str, Any], collections: dict[str, Any], default_locale: str,
+    problems: list[Problem],
+) -> dict[str, Any]:
+    directory = manual_root / "homepage"
+    return {
+        "schema_version": 1,
+        "hero": _read_hero(directory / "hero.toml", apps, collections, default_locale, problems),
+        "essentials": "essentials" if collections.get("essentials", {}).get("visibility") == "listed" else None,
+        "guides": _read_guides(directory / "guides.toml", default_locale, problems),
+    }
+
+
 def _read_abbs(tree: Path | None, commit: str | None) -> dict[str, Any] | None:
     if tree is None:
         if commit:
@@ -951,7 +1070,8 @@ def validate_catalog(root: Path, *, abbs_tree: Path | None = None, abbs_commit: 
                     problems.append(Problem(path, "id", f"duplicate collection ID: {collection_id}"))
                 collections[collection_id] = collection
 
-    return Catalog(root, config, categories, apps, app_dirs, collections, inventory), problems
+    homepage = _read_homepage(manual_root, apps, collections, config.get("default_locale"), problems)
+    return Catalog(root, config, categories, apps, app_dirs, collections, homepage, inventory), problems
 
 
 def _json_ready(value: Any) -> Any:
@@ -1014,7 +1134,7 @@ def _sha256(path: Path) -> str:
 def _catalog_revision(root: Path, abbs_inventory: dict[str, Any] | None = None) -> str:
     digest = hashlib.sha256()
     sources = [root / "repository.toml"]
-    for directory in ("taxonomy", "apps", "collections"):
+    for directory in ("taxonomy", "apps", "collections", "homepage"):
         base = root / directory
         if base.is_dir():
             sources.extend(path for path in base.rglob("*") if path.is_file())
@@ -1120,11 +1240,18 @@ def build_catalog(
         "catalog_id": catalog.config["repository_id"],
         "default_locale": catalog.config["default_locale"],
         "categories": _json_ready(catalog.categories),
+        "homepage": "homepage.json",
         "apps": entries,
     }
     if inventory is not None:
         index["abbs_inventory"] = "abbs-packages.json"
     _write_json(output / "index.json", index)
+    _write_json(output / "homepage.json", catalog.homepage)
+    hero = catalog.homepage["hero"]
+    if hero and hero["image"].startswith("homepage/assets/"):
+        image_path = Path(hero["image"])
+        (output / image_path).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(root / "manual" / image_path, output / image_path)
     _write_json(
         output / "collections.json",
         {

@@ -27,3 +27,15 @@ include = ["manual/taxonomy/categories.toml", "examples/manual/taxonomy/categori
 
 [rule.schema]
 path = "schemas/taxonomy.schema.json"
+
+[[rule]]
+include = ["manual/homepage/hero.toml", "examples/manual/homepage/hero.toml"]
+
+[rule.schema]
+path = "schemas/hero.schema.json"
+
+[[rule]]
+include = ["manual/homepage/guides.toml", "examples/manual/homepage/guides.toml"]
+
+[rule.schema]
+path = "schemas/guides.schema.json"

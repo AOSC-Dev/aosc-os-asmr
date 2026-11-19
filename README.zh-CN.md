@@ -13,7 +13,7 @@ ASMR 负责：
 - Icon、头图和截图；
 - 发行方、支持关系、可用性和隐私/兼容性声明；
 - AOSC 仓库包名或外部下载入口；
-- 首页推荐等人工策划集合。
+- 首页头图、装机必备的应用及其顺序、技巧指南链接。
 
 ASMR **不负责**已安装状态、当前版本、可升级状态、安装计划、操作进度或日志。这些运行
 数据由 `omactl`/`oma` 提供。
@@ -64,7 +64,10 @@ manual/repository.toml          仓库兼容策略
 manual/apps/<id>/app.toml       手写字段覆盖与外部应用
 manual/apps/<id>/description.*.md  长介绍
 manual/apps/<id>/assets/        Icon、头图和截图
-manual/collections/*.toml       人工策划的应用 ID 集合
+manual/collections/*.toml       有序应用集合，含装机必备 essentials.toml
+manual/homepage/hero.toml       首页头图的文案、图片路径和跳转目标
+manual/homepage/assets/         首页头图素材
+manual/homepage/guides.toml     按展示顺序排列的技巧指南
 manual/taxonomy/categories.toml 分类定义
 examples/manual/               同布局的示例输入
 schemas/                       编辑器使用的 JSON Schema
@@ -72,5 +75,5 @@ tools/asmr.py                   new/check/build 维护工具
 dist/v1/                       生成的 JSON 和复制后的媒体
 ```
 
-生产 Metadata 不应复制到手工索引。`index.json`、应用详情 JSON、集合和文件摘要清单均由
+生产 Metadata 不应复制到手工索引。`index.json`、`homepage.json`、应用详情 JSON、集合和文件摘要清单均由
 `asmr build` 自动生成。
