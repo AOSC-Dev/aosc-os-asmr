@@ -1,4 +1,3 @@
 # Repository app example
 
-This example shows metadata for software installed through the AOSC OS repository and `omactl`.
-
+This entry refers to the `sample-app` package in the AOSC OS repository. Aoska uses amo to check its installation status and request installation after confirmation.

@@ -29,7 +29,7 @@ Describe the applications, collections, categories, or tools changed by this PR.
 
 ## 供应链敏感变更 / Supply-chain-sensitive changes
 
-<!-- 如修改 installer、域名、包名、processor 或 capability，请说明风险和审核依据。
-Explain the risk and review evidence for changes to installers, origins, package names,
-processors, or capabilities. -->
+<!-- 如修改安装入口、下载域名或预期包名，请说明改动及审核依据。
+Explain changes to installation entry points, download origins, or expected package names
+and how they were verified. -->
 

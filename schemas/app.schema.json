@@ -304,7 +304,17 @@
           ]
         },
         "package": {
-          "type": "object"
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["backend", "names"],
+          "properties": {
+            "backend": { "const": "amo" },
+            "names": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9+.-]*$" }
+            }
+          }
         },
         "policy": {
           "type": "object"
@@ -314,11 +324,11 @@
         },
         "artifact": {
           "type": "object"
-        },
-        "install": {
-          "type": "object"
         }
-      }
+      },
+      "if": { "properties": { "kind": { "const": "aosc-repository" } } },
+      "then": { "required": ["package"] },
+      "else": { "not": { "required": ["package"] } }
     }
   },
   "description": "Optional field overrides merged with ABBS defaults. The builder validates the merged application and installer policy."

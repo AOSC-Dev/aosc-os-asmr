@@ -53,6 +53,6 @@ architectures = ["amd64", "arm64"]
 update_policy = "managed"
 
 [installers.package]
-backend = "omactl"
+backend = "amo"
 names = ["sample-app"]
 

@@ -16,9 +16,8 @@ ASMR owns:
 - AOSC repository package bindings or external acquisition entry points;
 - the homepage hero, ordered Essentials collection, and Tips & Guides links.
 
-ASMR does **not** own installed state, current versions, upgrade availability,
-operation plans, progress, or logs. Those runtime facts come from `omactl` and
-`oma`.
+Aoska queries amo, oma’s D-Bus service (`io.aosc.Amo`), for package state,
+installed and candidate versions, transaction plans, progress, and results.
 
 `manual/repository.toml` contains only repository-wide compatibility policy. CI
 generates the catalog index, content revision, generation timestamp, file

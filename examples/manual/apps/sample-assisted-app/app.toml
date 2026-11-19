@@ -69,9 +69,3 @@ version_source = "deb-control"
 min_bytes = 1000000
 max_bytes = 1000000000
 mime_types = ["application/vnd.debian.binary-package", "application/octet-stream"]
-
-[installers.install]
-backend = "omactl"
-capability = "run.install-local.v1"
-processor = "deb-local-v1"
-
