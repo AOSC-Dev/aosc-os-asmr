@@ -18,8 +18,12 @@ ASMR 负责：
 ASMR **不负责**已安装状态、当前版本、可升级状态、安装计划、操作进度或日志。这些运行
 数据由 `omactl`/`oma` 提供。
 
-`repository.toml` 只保存仓库级兼容策略，不保存应用目录。Catalog 索引、revision、
+`manual/repository.toml` 只保存仓库级兼容策略，不保存应用目录。Catalog 索引、revision、
 生成时间、文件清单和摘要全部由 CI 自动生成。
+
+权威手写输入集中在 `manual/`，示例使用 `examples/manual/`。`--root` 仍指向仓库根或
+`examples`。本地构建写入 Git 忽略的 `dist/v1/`。CI 从 ABBS `stable` 生成缺省值，在临时目录中构建同一布局并上传 artifact。运行时状态由包管理服务提供。目录职责和输出限制见
+[生成流程](docs/abbs-overlays.zh-CN.md)。
 
 ## 快速开始
 
@@ -56,14 +60,16 @@ make build ABBS_TREE=../aosc-os-abbs
 ## 仓库结构
 
 ```text
-apps/<id>/app.toml              应用结构化 Metadata
-apps/<id>/description.*.md      长介绍
-apps/<id>/assets/               Icon、头图和截图
-collections/*.toml              推荐、装机必备等应用 ID 集合
-taxonomy/categories.toml        分类定义
-schemas/                        编辑器使用的 JSON Schema
+manual/repository.toml          仓库兼容策略
+manual/apps/<id>/app.toml       手写字段覆盖与外部应用
+manual/apps/<id>/description.*.md  长介绍
+manual/apps/<id>/assets/        Icon、头图和截图
+manual/collections/*.toml       人工策划的应用 ID 集合
+manual/taxonomy/categories.toml 分类定义
+examples/manual/               同布局的示例输入
+schemas/                       编辑器使用的 JSON Schema
 tools/asmr.py                   new/check/build 维护工具
-dist/v1/                        CI 生成物，不人工编辑
+dist/v1/                       生成的 JSON 和复制后的媒体
 ```
 
 生产 Metadata 不应复制到手工索引。`index.json`、应用详情 JSON、集合和文件摘要清单均由

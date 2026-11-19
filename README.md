@@ -20,9 +20,16 @@ ASMR does **not** own installed state, current versions, upgrade availability,
 operation plans, progress, or logs. Those runtime facts come from `omactl` and
 `oma`.
 
-`repository.toml` contains only repository-wide compatibility policy. CI
+`manual/repository.toml` contains only repository-wide compatibility policy. CI
 generates the catalog index, content revision, generation timestamp, file
 inventory, and digests.
+
+Authoritative handwritten inputs live under `manual/`, with examples under
+`examples/manual/`. `--root` still selects the repository root or `examples`.
+Local builds write to the ignored `dist/v1/` directory. CI reads ABBS `stable`
+and uploads the same layout from its temporary build directory.
+Runtime state comes from the package manager. See the [build workflow](docs/abbs-overlays.md)
+for input responsibilities and output restrictions.
 
 ## Quick start
 
@@ -59,14 +66,16 @@ and [Metadata Schema v1](docs/schema-v1.md) for the field contract.
 ## Repository layout
 
 ```text
-apps/<id>/app.toml              Structured application metadata
-apps/<id>/description.*.md      Localized long descriptions
-apps/<id>/assets/               Icon, hero image, and screenshots
-collections/*.toml              Curated lists of application IDs
-taxonomy/categories.toml        Category definitions
-schemas/                        JSON Schema files for editor support
+manual/repository.toml          Repository compatibility policy
+manual/apps/<id>/app.toml       Handwritten overrides and external apps
+manual/apps/<id>/description.*.md  Localized descriptions
+manual/apps/<id>/assets/        Icons, hero images, and screenshots
+manual/collections/*.toml       Curated lists of application IDs
+manual/taxonomy/categories.toml Category definitions
+examples/manual/               Example inputs with the same layout
+schemas/                       JSON Schema files for editor support
 tools/asmr.py                   The new/check/build maintainer tool
-dist/v1/                        CI output; never edit by hand
+dist/v1/                       Generated JSON and copied media
 ```
 
 Production metadata must not be duplicated into handwritten indexes.

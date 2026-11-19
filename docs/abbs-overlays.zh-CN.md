@@ -1,6 +1,6 @@
 # ABBS 缺省值与手写覆盖
 
-ASMR 从 ABBS 生成缺省目录，再合并 `apps/<id>/app.toml` 中写出的字段。
+ASMR 从 ABBS 生成缺省目录，再合并 `manual/apps/<id>/app.toml` 中写出的字段。
 维护者可以只维护一项简介或媒体，省略字段沿用生成值。
 
 | 输入情况 | 结果 |
@@ -10,13 +10,20 @@ ASMR 从 ABBS 生成缺省目录，再合并 `apps/<id>/app.toml` 中写出的�
 | ABBS 无包，手写 `external = true` | 校验为外部条目 |
 | ABBS 无包，未标记 external | 校验失败，检查包名及提取诊断 |
 
+所有权威手写输入位于 `manual/`。外部应用和仓库包的覆盖文件都放在
+`manual/apps/<id>/app.toml`，CI 从 ABBS `stable` 获取生成输入，在临时目录构建并上传 artifact。本地默认将 JSON 与媒体副本写入 Git 忽略的 `dist/v1/`。实际安装状态、候选版本和操作结果由客户端查询包管理服务。
+
+`--root` 指向仓库根目录；`--root examples` 读取 `examples/manual/`。
+在仓库内，`--output` 只允许指向 `dist` 或其子目录。也可以指定仓库外的临时输出目录。
+客户端继续读取 `dist/v1/index.json`、`apps/<id>.json`、集合和 manifest，输入目录调整不改变发布布局。
+
 ## 合并规则
 
 表按字段递归合并，列表整体替换。`keywords = []` 或 `media.screenshots = []`
 明确清空对应列表。合并结果仍须通过字段类型、分类、媒体路径和安装入口校验。
 `external` 必须是布尔值。`external = true` 与源内包或仓库安装入口冲突时会报错。
 
-例如，`apps/firefox/app.toml` 可以只写：
+例如，`manual/apps/firefox/app.toml` 可以只写：
 
 ```toml
 [locales."zh-CN"]

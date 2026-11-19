@@ -4,6 +4,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from tools import asmr
@@ -18,11 +19,13 @@ class OverlayTests(unittest.TestCase):
         self.base = Path(temporary.name)
         self.root = self.base / "catalog"
         self.root.mkdir()
+        self.manual = self.root / "manual"
+        self.manual.mkdir()
         for name in ("repository.toml",):
-            shutil.copy(ROOT / name, self.root / name)
-        shutil.copytree(ROOT / "taxonomy", self.root / "taxonomy")
-        (self.root / "apps").mkdir()
-        (self.root / "collections").mkdir()
+            shutil.copy(ROOT / "manual" / name, self.manual / name)
+        shutil.copytree(ROOT / "manual/taxonomy", self.manual / "taxonomy")
+        (self.manual / "apps").mkdir()
+        (self.manual / "collections").mkdir()
         self.tree = self.base / "abbs"
         recipe = self.tree / "app-test" / "source-name" / "autobuild"
         recipe.mkdir(parents=True)
@@ -33,7 +36,7 @@ class OverlayTests(unittest.TestCase):
         self.output = self.base / "out"
 
     def overlay(self, app_id, text):
-        directory = self.root / "apps" / app_id
+        directory = self.manual / "apps" / app_id
         directory.mkdir(exist_ok=True)
         (directory / "app.toml").write_text(text)
 
@@ -46,10 +49,56 @@ class OverlayTests(unittest.TestCase):
 
     def test_output_cannot_overwrite_handwritten_app(self):
         self.overlay("sample-app", '[locales.en]\nsummary="Edited"\n')
-        directory = self.root / "apps" / "sample-app"
+        directory = self.manual / "apps" / "sample-app"
         with self.assertRaisesRegex(ValueError, "unsafe output"):
             asmr.build_catalog(self.root, directory, abbs_tree=self.tree)
         self.assertIn("Edited", (directory / "app.toml").read_text())
+
+    def test_rebuild_preserves_manual_bytes_and_ignores_stale_generated_data(self):
+        self.overlay("sample-app", '[locales.en]\nsummary="Handwritten summary"\n')
+        self.output = self.root / "dist/v1"
+        source_before = {path.relative_to(self.manual): path.read_bytes()
+                         for path in self.manual.rglob("*") if path.is_file()}
+        self.build()
+        first_manifest = (self.output / "manifest.json").read_bytes()
+        (self.output / "apps/sample-app.json").write_text('{"external":true,"summary":"stale"}')
+        (self.output / "apps/stale.json").write_text("{}")
+        self.build()
+        source_after = {path.relative_to(self.manual): path.read_bytes()
+                        for path in self.manual.rglob("*") if path.is_file()}
+        self.assertEqual(source_before, source_after)
+        self.assertEqual(first_manifest, (self.output / "manifest.json").read_bytes())
+        self.assertEqual("Handwritten summary", self.detail()["locales"]["en"]["summary"])
+        self.assertFalse((self.output / "apps/stale.json").exists())
+
+    def test_output_rejects_manual_tree_and_other_source_directories(self):
+        self.overlay("sample-app", '[locales.en]\nsummary="Edited"\n')
+        for directory in (self.manual, self.manual / "generated", self.root / "tools", self.root / "schemas"):
+            with self.subTest(directory=directory):
+                directory.mkdir(parents=True, exist_ok=True)
+                sentinel = directory / "preserve.txt"
+                sentinel.write_text("source data")
+                with self.assertRaisesRegex(ValueError, "output"):
+                    asmr.build_catalog(self.root, directory, abbs_tree=self.tree)
+                self.assertEqual("source data", sentinel.read_text())
+
+    def test_examples_root_cannot_overwrite_checkout_manual_metadata(self):
+        examples = self.root / "examples"
+        shutil.copytree(ROOT / "examples", examples)
+        sentinel = self.manual / "keep.txt"
+        sentinel.write_text("handwritten data")
+        # Model this temporary fixture as the checkout containing the tool.
+        with patch.object(asmr, "__file__", str(self.root / "tools/asmr.py")):
+            with self.assertRaisesRegex(ValueError, "unsafe output"):
+                asmr.build_catalog(examples, self.manual)
+        self.assertEqual("handwritten data", sentinel.read_text())
+        self.assertTrue((self.manual / "repository.toml").is_file())
+
+    def test_old_root_layout_reports_the_missing_manual_path(self):
+        legacy = self.base / "legacy"
+        shutil.copytree(self.manual, legacy)
+        _, problems = asmr.validate_catalog(legacy)
+        self.assertTrue(any("manual" in problem.path.as_posix() for problem in problems))
 
     def test_generated_package_is_usable_without_manual_metadata_or_media(self):
         index = self.build()
@@ -98,8 +147,8 @@ class OverlayTests(unittest.TestCase):
         self.assertEqual(before, (self.output / "manifest.json").read_bytes())
 
     def test_external_entry_accepts_manual_acquisition(self):
-        target = self.root / "apps" / "sample-assisted-app"
-        shutil.copytree(ROOT / "examples/apps/sample-assisted-app", target)
+        target = self.manual / "apps" / "sample-assisted-app"
+        shutil.copytree(ROOT / "examples/manual/apps/sample-assisted-app", target)
         self.build()
         detail = self.detail("sample-assisted-app")
         self.assertTrue(detail["external"])
@@ -114,14 +163,14 @@ class OverlayTests(unittest.TestCase):
                     self.build()
 
     def test_explicit_app_id_joins_package_without_duplicate_auto_entry(self):
-        shutil.copytree(ROOT / "examples/apps/sample-repository-app", self.root / "apps/sample-repository-app")
+        shutil.copytree(ROOT / "examples/manual/apps/sample-repository-app", self.manual / "apps/sample-repository-app")
         index = self.build()
         self.assertEqual(["sample-repository-app"], [app["id"] for app in index["apps"]])
         self.assertEqual(["sample-app"], list(self.detail("sample-repository-app")["abbs"]["packages"]))
 
     def test_external_entry_cannot_declare_repository_installer(self):
-        target = self.root / "apps/sample-repository-app"
-        shutil.copytree(ROOT / "examples/apps/sample-repository-app", target)
+        target = self.manual / "apps/sample-repository-app"
+        shutil.copytree(ROOT / "examples/manual/apps/sample-repository-app", target)
         metadata = target / "app.toml"
         metadata.write_text("external=true\n" + metadata.read_text())
         with self.assertRaises(ValueError):
@@ -135,7 +184,7 @@ class OverlayTests(unittest.TestCase):
                     self.build()
 
     def test_generated_ids_can_be_used_in_collections(self):
-        (self.root / "collections/essentials.toml").write_text('schema_version=1\nid="essentials"\nvisibility="listed"\napps=["sample-app"]\n[locales.en]\ntitle="Essentials"\n')
+        (self.manual / "collections/essentials.toml").write_text('schema_version=1\nid="essentials"\nvisibility="listed"\napps=["sample-app"]\n[locales.en]\ntitle="Essentials"\n')
         self.build()
         collections = json.loads((self.output / "collections.json").read_text())
         self.assertEqual(["sample-app"], collections["collections"][0]["apps"])
@@ -153,8 +202,8 @@ class OverlayTests(unittest.TestCase):
             self.build()
 
     def test_external_artifact_cannot_claim_an_existing_package(self):
-        target = self.root / "apps/sample-assisted-app"
-        shutil.copytree(ROOT / "examples/apps/sample-assisted-app", target)
+        target = self.manual / "apps/sample-assisted-app"
+        shutil.copytree(ROOT / "examples/manual/apps/sample-assisted-app", target)
         metadata = target / "app.toml"
         metadata.write_text(metadata.read_text().replace(
             'expected_package_names = ["sample-assisted-app"]',

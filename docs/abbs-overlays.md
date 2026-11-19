@@ -1,7 +1,7 @@
 # ABBS defaults and handwritten overrides
 
 ASMR generates a default catalog from ABBS and merges fields supplied in
-`apps/<id>/app.toml`. Maintainers can supply only the description or media they
+`manual/apps/<id>/app.toml`. Maintainers can supply only the description or media they
 want to change. Omitted fields keep their generated values.
 
 | Inputs | Result |
@@ -11,6 +11,18 @@ want to change. Omitted fields keep their generated values.
 | Missing ABBS package with `external = true` | Validated external entry |
 | Missing ABBS package without the external marker | Validation error; check package names and extraction diagnostics |
 
+All authoritative handwritten inputs live under `manual/`. External apps and
+repository-package overrides both use `manual/apps/<id>/app.toml`. CI obtains
+generated inputs from ABBS `stable` and uploads the result as an artifact. Local builds write JSON and copied media to
+the Git-ignored `dist/v1/` tree. Clients query the package manager for installed state,
+candidate versions, and operation results.
+
+`--root` selects the repository root; `--root examples` reads `examples/manual/`.
+Inside that root, `--output` must point to `dist` or a descendant. A temporary
+output outside the root is also supported. Clients continue to consume
+`dist/v1/index.json`, `apps/<id>.json`, collections, and the manifest, so the
+source layout change preserves the published layout.
+
 ## Merge rules
 
 Tables merge recursively by field. Lists replace the entire previous list,
@@ -18,7 +30,7 @@ including `keywords = []` and `media.screenshots = []`. The merged result must
 still pass type, category, media-path, and installer validation. `external` is a
 boolean. A true value conflicts with an ABBS package or repository installer.
 
-For example, `apps/firefox/app.toml` can contain only:
+For example, `manual/apps/firefox/app.toml` can contain only:
 
 ```toml
 [locales."zh-CN"]

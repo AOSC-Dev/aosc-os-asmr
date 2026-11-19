@@ -866,10 +866,11 @@ def _resolve_apps(manual: dict[str, Any], inventory: dict[str, Any], categories:
 
 def validate_catalog(root: Path, *, abbs_tree: Path | None = None, abbs_commit: str | None = None) -> tuple[Catalog | None, list[Problem]]:
     root = root.resolve()
+    manual_root = root / "manual"
     problems: list[Problem] = []
-    config_path = root / "repository.toml"
+    config_path = manual_root / "repository.toml"
     config = _load_toml(config_path, problems)
-    taxonomy_path = root / "taxonomy" / "categories.toml"
+    taxonomy_path = manual_root / "taxonomy" / "categories.toml"
     taxonomy = _load_toml(taxonomy_path, problems)
     if config is None or taxonomy is None:
         return None, problems
@@ -917,7 +918,7 @@ def validate_catalog(root: Path, *, abbs_tree: Path | None = None, abbs_commit: 
         categories.setdefault("uncategorized", {"name": {"en": "Uncategorized", "zh-CN": "未分类"}})
     apps: dict[str, dict[str, Any]] = {}
     app_dirs: dict[str, Path] = {}
-    apps_root = root / "apps"
+    apps_root = manual_root / "apps"
     if not apps_root.is_dir():
         problems.append(Problem(apps_root, "", "apps directory does not exist"))
     manual = {}
@@ -928,7 +929,7 @@ def validate_catalog(root: Path, *, abbs_tree: Path | None = None, abbs_commit: 
     if inventory is None:
         resolved = manual
     else:
-        resolved = _resolve_apps(manual, inventory, categories, root, problems)
+        resolved = _resolve_apps(manual, inventory, categories, manual_root, problems)
     for app_id, data in sorted(resolved.items()):
         app_dir = apps_root / app_id
         app = _validate_app(root, app_dir, app_dir / "app.toml", set(categories), problems,
@@ -938,7 +939,7 @@ def validate_catalog(root: Path, *, abbs_tree: Path | None = None, abbs_commit: 
             app_dirs[app_id] = app_dir
 
     collections: dict[str, dict[str, Any]] = {}
-    collections_root = root / "collections"
+    collections_root = manual_root / "collections"
     if not collections_root.is_dir():
         problems.append(Problem(collections_root, "", "collections directory does not exist"))
     else:
@@ -1053,8 +1054,13 @@ def build_catalog(
         abbs_root = abbs_tree.resolve()
         if output == abbs_root or output in abbs_root.parents or abbs_root in output.parents:
             raise ValueError("output directory must be outside the ABBS checkout")
-    inputs = [root / name for name in ("apps", "collections", "taxonomy", ".git")]
-    if output == root or output in root.parents or any(output.is_relative_to(path) for path in inputs):
+    # A catalog root (including examples/) owns only its dist/ build directory.
+    # Also protect this checkout when a fixture builds to an absolute path.
+    checkout = Path(__file__).resolve().parents[1]
+    inside_sources = output.is_relative_to(root) or output.is_relative_to(checkout)
+    if output in root.parents or output in checkout.parents or (
+        inside_sources and not output.is_relative_to(root / "dist")
+    ):
         raise ValueError(f"refusing to replace unsafe output directory: {output}")
     if output.exists():
         shutil.rmtree(output)
@@ -1150,7 +1156,7 @@ def build_catalog(
     manifest = {
         "schema_version": 1,
         "catalog_id": catalog.config["repository_id"],
-        "catalog_revision": _catalog_revision(root, inventory),
+        "catalog_revision": _catalog_revision(root / "manual", inventory),
         "minimum_client_version": catalog.config["minimum_client_version"],
         "generated_at": generated_at,
         "source_commit": source_commit,
@@ -1172,22 +1178,22 @@ def _placeholder_svg(label: str, width: int, height: int) -> str:
 
 
 def scaffold_app(root: Path, app_id: str, kind: str, category: str | None = None) -> Path:
-    root = root.resolve()
+    manual_root = root.resolve() / "manual"
     if not APP_ID_RE.fullmatch(app_id):
         raise ValueError("app ID must match [a-z0-9][a-z0-9+._-]*")
     if kind not in INSTALLER_KINDS:
         raise ValueError(f"unsupported installer kind: {kind}")
     problems: list[Problem] = []
-    config = _load_toml(root / "repository.toml", problems)
-    taxonomy = _load_toml(root / "taxonomy" / "categories.toml", problems)
+    config = _load_toml(manual_root / "repository.toml", problems)
+    taxonomy = _load_toml(manual_root / "taxonomy" / "categories.toml", problems)
     if problems or config is None or taxonomy is None:
-        raise ValueError("repository.toml and taxonomy/categories.toml must be valid first")
+        raise ValueError("manual/repository.toml and manual/taxonomy/categories.toml must be valid first")
     categories = taxonomy.get("categories", {})
     if not isinstance(categories, dict) or not categories:
         raise ValueError("taxonomy must define at least one category")
     if category is not None and category not in categories:
         raise ValueError(f"unknown category: {category}")
-    app_dir = root / "apps" / app_id
+    app_dir = manual_root / "apps" / app_id
     if app_dir.exists():
         raise FileExistsError(f"app already exists: {app_dir}")
     if kind == "aosc-repository":

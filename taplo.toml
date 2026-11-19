@@ -5,25 +5,25 @@ column_width = 100
 reorder_keys = false
 
 [[rule]]
-include = ["repository.toml", "examples/repository.toml"]
+include = ["manual/repository.toml", "examples/manual/repository.toml"]
 
 [rule.schema]
 path = "schemas/repository.schema.json"
 
 [[rule]]
-include = ["apps/**/app.toml", "examples/apps/**/app.toml"]
+include = ["manual/apps/**/app.toml", "examples/manual/apps/**/app.toml"]
 
 [rule.schema]
 path = "schemas/app.schema.json"
 
 [[rule]]
-include = ["collections/*.toml", "examples/collections/*.toml"]
+include = ["manual/collections/*.toml", "examples/manual/collections/*.toml"]
 
 [rule.schema]
 path = "schemas/collection.schema.json"
 
 [[rule]]
-include = ["taxonomy/categories.toml", "examples/taxonomy/categories.toml"]
+include = ["manual/taxonomy/categories.toml", "examples/manual/taxonomy/categories.toml"]
 
 [rule.schema]
 path = "schemas/taxonomy.schema.json"

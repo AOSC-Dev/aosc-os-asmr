@@ -6,9 +6,14 @@
 
 本手册面向负责把软件加入 AOSKA 搜索、详情页和推荐集合的维护者。
 
+权威手写输入集中在 `manual/`，示例使用 `examples/manual/`。`--root` 仍指向仓库根或
+`examples`。CI 从 ABBS `stable` 生成缺省值，把合并后的 JSON 与媒体写入忽略的
+`dist/v1/`。运行时状态由包管理服务提供。目录职责和输出限制见
+[生成流程](abbs-overlays.zh-CN.md)。
+
 ## 1. 基本原则
 
-1. 每个应用只维护一份 `apps/<id>/app.toml`。
+1. 每个应用只维护一份 `manual/apps/<id>/app.toml`。
 2. 不人工维护搜索索引、应用详情 JSON 或推荐项的名称和 Icon。
 3. App ID 与 DEB 包名分离；通过 `installers` 建立绑定。
 4. 不把已安装状态、当前版本或更新状态写入 ASMR。
@@ -48,10 +53,10 @@ python3 tools/asmr.py new vendor-app \
 工具会创建：
 
 ```text
-apps/<id>/app.toml
-apps/<id>/description.zh-CN.md
-apps/<id>/assets/icon.svg
-apps/<id>/assets/hero.svg
+manual/apps/<id>/app.toml
+manual/apps/<id>/description.zh-CN.md
+manual/apps/<id>/assets/icon.svg
+manual/apps/<id>/assets/hero.svg
 ```
 
 模板中的 `TODO:` 字段必须全部替换，否则 CI 会失败。
@@ -120,7 +125,7 @@ AOSKA 应接收浏览器产生的下载文件，而不是记录临时 URL 后重
 
 ## 6. 添加到推荐集合
 
-编辑 `collections/<collection>.toml`，仅增加应用 ID：
+编辑 `manual/collections/<collection>.toml`，仅增加应用 ID：
 
 ```toml
 apps = ["firefox", "vendor-app"]
