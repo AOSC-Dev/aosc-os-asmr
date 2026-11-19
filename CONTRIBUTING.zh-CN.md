@@ -2,6 +2,8 @@
 
 [English](CONTRIBUTING.md) | **简体中文**
 
+ASMR 以 ABBS 生成值为缺省值，手写 metadata 只覆盖写出的字段。源外条目必须显式标记 `external = true`。完整规则见 [缺省值与覆盖](docs/abbs-overlays.zh-CN.md)。
+
 添加或修改软件 Metadata 前，请阅读
 [`docs/maintainer-guide.zh-CN.md`](docs/maintainer-guide.zh-CN.md)。
 

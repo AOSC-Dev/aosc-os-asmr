@@ -2,9 +2,10 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
-ASMR is the human-maintained application metadata source used by AOSKA.
-Maintainers describe applications with TOML, Markdown, and media assets. CI
-validates the source data and generates a read-only JSON catalog.
+ASMR uses ABBS-generated defaults with field-level handwritten overrides. Entries absent from ABBS require `external = true`. See [defaults and overrides](docs/abbs-overlays.md).
+
+Maintainers supply TOML, Markdown, and media assets to supplement the ABBS
+defaults. CI merges and validates both inputs to generate a read-only JSON catalog.
 
 ASMR owns:
 
@@ -35,10 +36,10 @@ python3 tools/asmr.py new example-app \
   --category utilities
 
 # Validate all source metadata.
-python3 tools/asmr.py check
+python3 tools/asmr.py check --abbs-tree ../aosc-os-abbs
 
 # Build the dist/v1 JSON catalog.
-python3 tools/asmr.py build
+python3 tools/asmr.py build --abbs-tree ../aosc-os-abbs
 
 # Run the test suite.
 python3 -m unittest discover -s tests -v
@@ -47,9 +48,9 @@ python3 -m unittest discover -s tests -v
 Equivalent Make targets are available:
 
 ```bash
-make check
+make check ABBS_TREE=../aosc-os-abbs
 make test
-make build
+make build ABBS_TREE=../aosc-os-abbs
 ```
 
 See the [maintainer guide](docs/maintainer-guide.md) for the complete workflow

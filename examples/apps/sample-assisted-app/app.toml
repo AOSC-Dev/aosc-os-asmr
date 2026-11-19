@@ -1,4 +1,5 @@
 schema_version = 1
+external = true
 id = "sample-assisted-app"
 visibility = "listed"
 lifecycle = "active"

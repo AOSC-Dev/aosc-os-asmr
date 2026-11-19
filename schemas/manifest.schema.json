@@ -14,28 +14,46 @@
     "files"
   ],
   "properties": {
-    "schema_version": { "const": 1 },
-    "catalog_id": { "type": "string", "minLength": 1 },
+    "schema_version": {
+      "const": 1
+    },
+    "catalog_id": {
+      "type": "string",
+      "minLength": 1
+    },
     "catalog_revision": {
       "type": "string",
       "pattern": "^sha256:[0-9a-f]{64}$"
     },
-    "minimum_client_version": { "type": "string", "minLength": 1 },
+    "minimum_client_version": {
+      "type": "string",
+      "minLength": 1
+    },
     "generated_at": {
       "type": "string",
       "format": "date-time"
     },
     "source_commit": {
-      "type": ["string", "null"]
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "files": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["path", "sha256", "bytes"],
+        "required": [
+          "path",
+          "sha256",
+          "bytes"
+        ],
         "properties": {
-          "path": { "type": "string", "minLength": 1 },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
           "sha256": {
             "type": "string",
             "pattern": "^[0-9a-f]{64}$"
@@ -46,6 +64,21 @@
           }
         }
       }
+    },
+    "abbs_source_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40,64}$"
+    },
+    "abbs_inventory": {
+      "const": "abbs-packages.json"
     }
+  },
+  "dependentRequired": {
+    "abbs_source_commit": [
+      "abbs_inventory"
+    ],
+    "abbs_inventory": [
+      "abbs_source_commit"
+    ]
   }
 }

@@ -2,6 +2,8 @@
 
 **English** | [简体中文](maintainer-guide.zh-CN.md)
 
+With an ABBS input, handwritten files are partial overlays. The complete field constraints below apply after merging; see [ABBS defaults and overrides](abbs-overlays.md) for optional defaults. External entries require `external = true`.
+
 This guide is for maintainers who add software to AOSKA search, application
 detail pages, and curated collections.
 
@@ -23,7 +25,7 @@ The maintainer tool depends only on Python 3.11 and the standard library:
 
 ```bash
 python3 --version
-python3 tools/asmr.py check
+python3 tools/asmr.py check --abbs-tree ../aosc-os-abbs
 ```
 
 An editor with Taplo or Even Better TOML support is recommended. `taplo.toml`
@@ -146,7 +148,7 @@ already contains every `listed + active` application; there is no handwritten
 Before submitting:
 
 ```bash
-make check
+make check ABBS_TREE=../aosc-os-abbs
 make check-examples
 make test
 ```
@@ -154,7 +156,7 @@ make test
 To inspect generated output:
 
 ```bash
-python3 tools/asmr.py build
+python3 tools/asmr.py build --abbs-tree ../aosc-os-abbs
 find dist/v1 -type f
 ```
 

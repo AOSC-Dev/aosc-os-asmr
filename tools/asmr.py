@@ -12,6 +12,7 @@ import os
 import re
 import shutil
 import sys
+import subprocess
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -19,7 +20,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 
-APP_ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
+APP_ID_RE = re.compile(r"^[a-z0-9][a-z0-9+._-]*$")
 PACKAGE_NAME_RE = re.compile(r"^[a-z0-9][a-z0-9+.-]*$")
 ARCH_RE = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 MEDIA_SUFFIXES = {".avif", ".jpeg", ".jpg", ".png", ".svg", ".webp"}
@@ -50,6 +51,7 @@ FORBIDDEN_METADATA_KEYS = {
     "shell",
 }
 APP_KEYS = {
+    "external",
     "schema_version",
     "id",
     "visibility",
@@ -92,6 +94,7 @@ class Catalog:
     apps: dict[str, dict[str, Any]]
     app_dirs: dict[str, Path]
     collections: dict[str, dict[str, Any]]
+    abbs_inventory: dict[str, Any] | None = None
 
 
 def _load_toml(path: Path, problems: list[Problem]) -> dict[str, Any] | None:
@@ -591,18 +594,23 @@ def _validate_app(
     path: Path,
     categories: set[str],
     problems: list[Problem],
+    data: dict[str, Any] | None = None,
+    generated: bool = False,
 ) -> dict[str, Any] | None:
-    data = _load_toml(path, problems)
+    if data is None:
+        data = _load_toml(path, problems)
     if data is None:
         return None
     _reject_unknown_keys(data, APP_KEYS, path, "", problems)
+    if "external" in data and not isinstance(data["external"], bool):
+        problems.append(Problem(path, "external", "must be a boolean"))
     _reject_unsafe_or_placeholder_values(data, path, "", problems)
     if data.get("schema_version") != 1:
         problems.append(Problem(path, "schema_version", "must equal 1"))
     app_id = _string(data, "id", path, "id", problems)
     if app_id is not None:
         if not APP_ID_RE.fullmatch(app_id):
-            problems.append(Problem(path, "id", "must match [a-z0-9][a-z0-9._-]*"))
+            problems.append(Problem(path, "id", "must match [a-z0-9][a-z0-9+._-]*"))
         if app_id != app_dir.name:
             problems.append(Problem(path, "id", f"must match directory name {app_dir.name!r}"))
     _enum(data, "visibility", VISIBILITIES, path, "visibility", problems)
@@ -614,8 +622,9 @@ def _validate_app(
             problems.append(Problem(path, "categories", f"unknown category: {category}"))
     _string_list(data, "aliases", path, "aliases", problems, required=False)
     _string_list(data, "keywords", path, "keywords", problems, required=False)
-    _string_list(data, "maintainers", path, "maintainers", problems)
-    _date(data, "reviewed_at", path, "reviewed_at", problems)
+    _string_list(data, "maintainers", path, "maintainers", problems, required=not generated or "maintainers" in data)
+    if not generated or "reviewed_at" in data:
+        _date(data, "reviewed_at", path, "reviewed_at", problems)
 
     locales = _table(data, "locales", path, "locales", problems)
     if default_locale is not None and default_locale not in locales:
@@ -629,10 +638,11 @@ def _validate_app(
             translation, {"name", "summary", "description"}, path, field, problems
         )
         _string(translation, "name", path, f"{field}.name", problems)
-        _string(translation, "summary", path, f"{field}.summary", problems)
-        description = _string(
-            translation, "description", path, f"{field}.description", problems
-        )
+        if not generated or locale == default_locale or "summary" in translation:
+            _string(translation, "summary", path, f"{field}.summary", problems)
+        description = None
+        if not generated or "description" in translation:
+            description = _string(translation, "description", path, f"{field}.description", problems)
         if description is not None:
             description_path = app_dir / description
             resolved = description_path.resolve()
@@ -650,8 +660,9 @@ def _validate_app(
     _reject_unknown_keys(
         media, {"icon", "hero", "hero_focal_point", "screenshots"}, path, "media", problems
     )
-    _asset_path(app_dir, media.get("icon"), path, "media.icon", problems)
-    _asset_path(app_dir, media.get("hero"), path, "media.hero", problems)
+    for asset in ("icon", "hero"):
+        if not generated or asset in media:
+            _asset_path(app_dir, media.get(asset), path, f"media.{asset}", problems)
     focal_point = media.get("hero_focal_point")
     if focal_point is not None and (
         not isinstance(focal_point, list)
@@ -672,20 +683,18 @@ def _validate_app(
                 Problem(path, f"{field}.alt", f"must contain default locale {default_locale!r}")
             )
 
-    publisher = _table(data, "publisher", path, "publisher", problems)
-    _reject_unknown_keys(
-        publisher, {"name", "relationship", "homepage"}, path, "publisher", problems
-    )
-    _string(publisher, "name", path, "publisher.name", problems)
-    _enum(
-        publisher,
-        "relationship",
-        {"upstream", "aosc", "third-party", "community"},
-        path,
-        "publisher.relationship",
-        problems,
-    )
-    _https_url(publisher.get("homepage"), path, "publisher.homepage", problems)
+    if not generated or "publisher" in data:
+        publisher = _table(data, "publisher", path, "publisher", problems)
+        _reject_unknown_keys(
+            publisher, {"name", "relationship", "homepage"}, path, "publisher", problems
+        )
+        if not generated or "name" in publisher:
+            _string(publisher, "name", path, "publisher.name", problems)
+        if not generated or "relationship" in publisher:
+            _enum(publisher, "relationship", {"upstream", "aosc", "third-party", "community"},
+                  path, "publisher.relationship", problems)
+        if not generated or "homepage" in publisher:
+            _https_url(publisher.get("homepage"), path, "publisher.homepage", problems)
 
     links = _table(data, "links", path, "links", problems, required=False)
     _reject_unknown_keys(
@@ -704,7 +713,8 @@ def _validate_app(
     )
     for key, allowed in DISCLOSURE_VALUES.items():
         _enum(disclosures, key, allowed, path, f"disclosures.{key}", problems)
-    _date(disclosures, "reviewed_at", path, "disclosures.reviewed_at", problems)
+    if not generated or "reviewed_at" in disclosures:
+        _date(disclosures, "reviewed_at", path, "disclosures.reviewed_at", problems)
     _string_list(disclosures, "notes", path, "disclosures.notes", problems, required=False)
 
     installers = _list_of_tables(data, "installers", path, "installers", problems)
@@ -739,7 +749,7 @@ def _validate_collection(
     collection_id = _string(data, "id", path, "id", problems)
     if collection_id is not None:
         if not APP_ID_RE.fullmatch(collection_id):
-            problems.append(Problem(path, "id", "must match [a-z0-9][a-z0-9._-]*"))
+            problems.append(Problem(path, "id", "must match [a-z0-9][a-z0-9+._-]*"))
         if collection_id != path.stem:
             problems.append(Problem(path, "id", f"must match file name {path.stem!r}"))
     _enum(data, "visibility", {"listed", "hidden"}, path, "visibility", problems)
@@ -756,7 +766,105 @@ def _validate_collection(
     return data
 
 
-def validate_catalog(root: Path) -> tuple[Catalog | None, list[Problem]]:
+def _read_abbs(tree: Path | None, commit: str | None) -> dict[str, Any] | None:
+    if tree is None:
+        if commit:
+            raise ValueError("--abbs-commit requires --abbs-tree")
+        return None
+    if __package__:
+        from .abbs import snapshot
+    else:
+        from abbs import snapshot
+    try:
+        revision = subprocess.check_output(["git", "-C", str(tree), "rev-parse", "HEAD"], text=True, stderr=subprocess.PIPE).strip()
+        dirty = subprocess.check_output(["git", "-C", str(tree), "status", "--porcelain"], text=True, stderr=subprocess.PIPE).strip()
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise ValueError("ABBS tree must be a readable Git checkout") from error
+    if commit and commit != revision:
+        raise ValueError("--abbs-commit must equal the ABBS checkout HEAD")
+    if dirty:
+        raise ValueError("ABBS checkout must be clean so its commit identifies the input")
+    return snapshot(tree.resolve(), revision)
+
+
+def _merge_metadata(base: dict[str, Any], overlay: dict[str, Any]) -> dict[str, Any]:
+    result = copy.deepcopy(base)
+    for key, value in overlay.items():
+        if isinstance(value, dict) and isinstance(result.get(key), dict):
+            result[key] = _merge_metadata(result[key], value)
+        else:
+            result[key] = copy.deepcopy(value)
+    return result
+
+
+def _generated_app(name: str, facts: dict[str, Any], categories: dict[str, Any]) -> dict[str, Any]:
+    category = facts["section"] if facts["section"] in categories else "uncategorized"
+    return {
+        "schema_version": 1, "id": name, "external": False,
+        "visibility": "listed", "lifecycle": "active", "default_locale": "en",
+        "categories": [category], "locales": {"en": {"name": name, "summary": facts["description"]}},
+        "media": {}, "disclosures": {key: "unknown" for key in DISCLOSURE_VALUES},
+        "installers": [{"id": "aosc", "kind": "aosc-repository", "priority": 100,
+                        "architectures": [], "update_policy": "managed",
+                        "package": {"backend": "omactl", "names": [name]}}],
+    }
+
+
+def _resolve_apps(manual: dict[str, Any], inventory: dict[str, Any], categories: dict[str, Any], root: Path, problems: list[Problem]) -> dict[str, Any]:
+    packages = inventory["packages"]
+    unresolved = {item["package_name"] for item in inventory.get("skipped", []) if isinstance(item.get("package_name"), str)}
+    result = {}
+    claimed = set()
+    for directory, overlay in manual.items():
+        path = root / "apps" / directory / "app.toml"
+        external = overlay.get("external", False)
+        if not isinstance(external, bool):
+            problems.append(Problem(path, "external", "must be a boolean"))
+            continue
+        installers = overlay.get("installers", [])
+        refs = []
+        if isinstance(installers, list):
+            for installer in installers:
+                if isinstance(installer, dict) and installer.get("kind") == "aosc-repository":
+                    names = installer.get("package", {}).get("names", []) if isinstance(installer.get("package"), dict) else []
+                    if isinstance(names, list):
+                        refs.extend(name for name in names if isinstance(name, str))
+        if external:
+            expected = set()
+            if isinstance(installers, list):
+                for installer in installers:
+                    artifact = installer.get("artifact") if isinstance(installer, dict) else None
+                    if isinstance(artifact, dict) and isinstance(artifact.get("expected_package_names"), list):
+                        expected.update(name for name in artifact["expected_package_names"] if isinstance(name, str))
+            if directory in packages or directory in unresolved or expected.intersection(set(packages) | unresolved) or refs:
+                problems.append(Problem(path, "external", "external=true cannot match an ABBS package or declare a repository installer"))
+            result[directory] = copy.deepcopy(overlay)
+            continue
+        refs = refs or [directory]
+        if directory in packages and directory not in refs:
+            problems.append(Problem(path, "id", "application ID conflicts with another ABBS package"))
+        missing = [name for name in refs if name not in packages]
+        if missing:
+            problems.append(Problem(path, "installers.package.names", f"ABBS package {missing[0]!r} is missing or ambiguous; declare external=true for an external app"))
+            continue
+        if claimed.intersection(refs):
+            problems.append(Problem(path, "installers.package.names", "package is already claimed by another application"))
+        claimed.update(refs)
+        base = _generated_app(refs[0], packages[refs[0]], categories)
+        base["id"] = directory
+        locales = overlay.get("locales", {})
+        if isinstance(locales, dict):
+            for locale in locales:
+                if locale not in base["locales"]:
+                    base["locales"][locale] = {"name": refs[0]}
+        result[directory] = _merge_metadata(base, overlay)
+    for name, facts in sorted(packages.items()):
+        if name not in claimed and name not in result:
+            result[name] = _generated_app(name, facts, categories)
+    return result
+
+
+def validate_catalog(root: Path, *, abbs_tree: Path | None = None, abbs_commit: str | None = None) -> tuple[Catalog | None, list[Problem]]:
     root = root.resolve()
     problems: list[Problem] = []
     config_path = root / "repository.toml"
@@ -804,21 +912,30 @@ def validate_catalog(root: Path) -> tuple[Catalog | None, list[Problem]]:
                     Problem(taxonomy_path, f"categories.{category_id}.name", "must be a localized table")
                 )
 
+    inventory = _read_abbs(abbs_tree, abbs_commit)
+    if inventory is not None:
+        categories.setdefault("uncategorized", {"name": {"en": "Uncategorized", "zh-CN": "未分类"}})
     apps: dict[str, dict[str, Any]] = {}
     app_dirs: dict[str, Path] = {}
     apps_root = root / "apps"
     if not apps_root.is_dir():
         problems.append(Problem(apps_root, "", "apps directory does not exist"))
+    manual = {}
+    for app_dir in sorted(path for path in apps_root.iterdir() if path.is_dir()) if apps_root.is_dir() else []:
+        data = _load_toml(app_dir / "app.toml", problems)
+        if data is not None:
+            manual[app_dir.name] = data
+    if inventory is None:
+        resolved = manual
     else:
-        for app_dir in sorted(path for path in apps_root.iterdir() if path.is_dir()):
-            app_path = app_dir / "app.toml"
-            app = _validate_app(root, app_dir, app_path, set(categories), problems)
-            if app is not None and _is_nonempty_string(app.get("id")):
-                app_id = app["id"]
-                if app_id in apps:
-                    problems.append(Problem(app_path, "id", f"duplicate app ID: {app_id}"))
-                apps[app_id] = app
-                app_dirs[app_id] = app_dir
+        resolved = _resolve_apps(manual, inventory, categories, root, problems)
+    for app_id, data in sorted(resolved.items()):
+        app_dir = apps_root / app_id
+        app = _validate_app(root, app_dir, app_dir / "app.toml", set(categories), problems,
+                            data=data, generated=inventory is not None and data.get("external") is False)
+        if app is not None:
+            apps[app_id] = app
+            app_dirs[app_id] = app_dir
 
     collections: dict[str, dict[str, Any]] = {}
     collections_root = root / "collections"
@@ -833,7 +950,7 @@ def validate_catalog(root: Path) -> tuple[Catalog | None, list[Problem]]:
                     problems.append(Problem(path, "id", f"duplicate collection ID: {collection_id}"))
                 collections[collection_id] = collection
 
-    return Catalog(root, config, categories, apps, app_dirs, collections), problems
+    return Catalog(root, config, categories, apps, app_dirs, collections, inventory), problems
 
 
 def _json_ready(value: Any) -> Any:
@@ -861,12 +978,13 @@ def _catalog_asset_path(app_id: str, relative: str) -> str:
 def _compile_app(app_id: str, app: dict[str, Any], app_dir: Path) -> dict[str, Any]:
     compiled = _json_ready(copy.deepcopy(app))
     for locale, translation in compiled["locales"].items():
-        description_path = app_dir / translation["description"]
-        translation["description_markdown"] = description_path.read_text(encoding="utf-8")
-        del translation["description"]
+        if "description" in translation:
+            description_path = app_dir / translation.pop("description")
+            translation["description_markdown"] = description_path.read_text(encoding="utf-8")
     media = compiled["media"]
-    media["icon"] = _catalog_asset_path(app_id, media["icon"])
-    media["hero"] = _catalog_asset_path(app_id, media["hero"])
+    for asset in ("icon", "hero"):
+        if asset in media:
+            media[asset] = _catalog_asset_path(app_id, media[asset])
     for screenshot in media.get("screenshots", []):
         screenshot["path"] = _catalog_asset_path(app_id, screenshot["path"])
     return compiled
@@ -892,7 +1010,7 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _catalog_revision(root: Path) -> str:
+def _catalog_revision(root: Path, abbs_inventory: dict[str, Any] | None = None) -> str:
     digest = hashlib.sha256()
     sources = [root / "repository.toml"]
     for directory in ("taxonomy", "apps", "collections"):
@@ -906,6 +1024,8 @@ def _catalog_revision(root: Path) -> str:
         content = path.read_bytes()
         digest.update(len(content).to_bytes(8, "big"))
         digest.update(content)
+    if abbs_inventory is not None:
+        digest.update(json.dumps(abbs_inventory, sort_keys=True, ensure_ascii=False).encode("utf-8"))
     return f"sha256:{digest.hexdigest()}"
 
 
@@ -915,27 +1035,51 @@ def build_catalog(
     *,
     generated_at: str | None = None,
     source_commit: str | None = None,
+    abbs_tree: Path | None = None,
+    abbs_commit: str | None = None,
 ) -> Path:
-    catalog, problems = validate_catalog(root)
+    catalog, problems = validate_catalog(root, abbs_tree=abbs_tree, abbs_commit=abbs_commit)
     if catalog is None or problems:
         for problem in problems:
             print(problem.display(root.resolve()), file=sys.stderr)
         raise ValueError(f"catalog validation failed with {len(problems)} error(s)")
 
+    inventory = catalog.abbs_inventory
+
     root = root.resolve()
     output = output if output.is_absolute() else root / output
     output = output.resolve()
-    if output in {root, root / ".git", Path("/")}:
+    if abbs_tree is not None:
+        abbs_root = abbs_tree.resolve()
+        if output == abbs_root or output in abbs_root.parents or abbs_root in output.parents:
+            raise ValueError("output directory must be outside the ABBS checkout")
+    inputs = [root / name for name in ("apps", "collections", "taxonomy", ".git")]
+    if output == root or output in root.parents or any(output.is_relative_to(path) for path in inputs):
         raise ValueError(f"refusing to replace unsafe output directory: {output}")
     if output.exists():
         shutil.rmtree(output)
     output.mkdir(parents=True)
+    if inventory is not None:
+        _write_json(output / "abbs-packages.json", inventory)
 
     entries: list[dict[str, Any]] = []
     for app_id in sorted(catalog.apps):
         app = catalog.apps[app_id]
         app_dir = catalog.app_dirs[app_id]
         compiled = _compile_app(app_id, app, app_dir)
+        if inventory is not None:
+            refs = sorted({
+                name for installer in app["installers"]
+                if installer["kind"] == "aosc-repository"
+                for name in installer["package"]["names"]
+            })
+            if not refs and not app.get("external") and app_id in inventory["packages"]:
+                refs = [app_id]
+            if refs:
+                compiled["abbs"] = {
+                    "source_commit": inventory["source_commit"],
+                    "packages": {name: inventory["packages"][name] for name in refs},
+                }
         _write_json(output / "apps" / f"{app_id}.json", compiled)
         assets = app_dir / "assets"
         if assets.is_dir():
@@ -944,19 +1088,20 @@ def build_catalog(
             entries.append(
                 {
                     "id": app_id,
+                    "external": app.get("external", False),
                     "default_locale": app["default_locale"],
                     "locales": {
                         locale: {
                             "name": translation["name"],
-                            "summary": translation["summary"],
+                            **({"summary": translation["summary"]} if "summary" in translation else {}),
                         }
                         for locale, translation in app["locales"].items()
                     },
                     "categories": app["categories"],
                     "aliases": app.get("aliases", []),
                     "keywords": app.get("keywords", []),
-                    "icon": _catalog_asset_path(app_id, app["media"]["icon"]),
-                    "hero": _catalog_asset_path(app_id, app["media"]["hero"]),
+                    "icon": _catalog_asset_path(app_id, app["media"]["icon"]) if "icon" in app["media"] else None,
+                    "hero": _catalog_asset_path(app_id, app["media"]["hero"]) if "hero" in app["media"] else None,
                     "installer_kinds": sorted(
                         {installer["kind"] for installer in app["installers"]}
                     ),
@@ -971,6 +1116,8 @@ def build_catalog(
         "categories": _json_ready(catalog.categories),
         "apps": entries,
     }
+    if inventory is not None:
+        index["abbs_inventory"] = "abbs-packages.json"
     _write_json(output / "index.json", index)
     _write_json(
         output / "collections.json",
@@ -1003,12 +1150,15 @@ def build_catalog(
     manifest = {
         "schema_version": 1,
         "catalog_id": catalog.config["repository_id"],
-        "catalog_revision": _catalog_revision(root),
+        "catalog_revision": _catalog_revision(root, inventory),
         "minimum_client_version": catalog.config["minimum_client_version"],
         "generated_at": generated_at,
         "source_commit": source_commit,
         "files": files,
     }
+    if inventory is not None:
+        manifest["abbs_source_commit"] = inventory["source_commit"]
+        manifest["abbs_inventory"] = "abbs-packages.json"
     _write_json(output / "manifest.json", manifest)
     return output
 
@@ -1024,7 +1174,7 @@ def _placeholder_svg(label: str, width: int, height: int) -> str:
 def scaffold_app(root: Path, app_id: str, kind: str, category: str | None = None) -> Path:
     root = root.resolve()
     if not APP_ID_RE.fullmatch(app_id):
-        raise ValueError("app ID must match [a-z0-9][a-z0-9._-]*")
+        raise ValueError("app ID must match [a-z0-9][a-z0-9+._-]*")
     if kind not in INSTALLER_KINDS:
         raise ValueError(f"unsupported installer kind: {kind}")
     problems: list[Problem] = []
@@ -1035,12 +1185,19 @@ def scaffold_app(root: Path, app_id: str, kind: str, category: str | None = None
     categories = taxonomy.get("categories", {})
     if not isinstance(categories, dict) or not categories:
         raise ValueError("taxonomy must define at least one category")
-    category = category or sorted(categories)[0]
-    if category not in categories:
+    if category is not None and category not in categories:
         raise ValueError(f"unknown category: {category}")
     app_dir = root / "apps" / app_id
     if app_dir.exists():
         raise FileExistsError(f"app already exists: {app_dir}")
+    if kind == "aosc-repository":
+        app_dir.mkdir(parents=True)
+        (app_dir / "app.toml").write_text(
+            "external = false\n" + (f'categories = ["{category}"]\n' if category else "")
+            + '# Other fields inherit from ABBS. Validate with --abbs-tree.\n',
+            encoding="utf-8",
+        )
+        return app_dir
     assets = app_dir / "assets"
     assets.mkdir(parents=True)
     default_locale = config.get("default_locale", "zh-CN")
@@ -1050,7 +1207,9 @@ def scaffold_app(root: Path, app_id: str, kind: str, category: str | None = None
     (assets / "icon.svg").write_text(_placeholder_svg(app_id, 256, 256), encoding="utf-8")
     (assets / "hero.svg").write_text(_placeholder_svg(app_id, 1280, 480), encoding="utf-8")
 
+    category = category or sorted(categories)[0]
     common = f"""schema_version = 1
+external = true
 id = "{app_id}"
 visibility = "listed"
 lifecycle = "active"
@@ -1087,19 +1246,7 @@ reviewed_at = {dt.date.today().isoformat()}
 notes = []
 
 """
-    if kind == "aosc-repository":
-        installer = f"""[[installers]]
-id = "aosc"
-kind = "aosc-repository"
-priority = 100
-architectures = []
-update_policy = "managed"
-
-[installers.package]
-backend = "omactl"
-names = ["{app_id}"]
-"""
-    elif kind in {"direct-deb", "browser-assisted-deb"}:
+    if kind in {"direct-deb", "browser-assisted-deb"}:
         acquisition = (
             'url = "https://example.invalid/download.deb"\n'
             if kind == "direct-deb"
@@ -1155,7 +1302,11 @@ def _print_problems(root: Path, problems: list[Problem]) -> None:
 
 def _command_check(args: argparse.Namespace) -> int:
     root = Path(args.root)
-    catalog, problems = validate_catalog(root)
+    try:
+        catalog, problems = validate_catalog(root, abbs_tree=Path(args.abbs_tree) if args.abbs_tree else None, abbs_commit=args.abbs_commit)
+    except ValueError as error:
+        print(str(error), file=sys.stderr)
+        return 1
     if problems:
         _print_problems(root, problems)
         print(f"ASMR validation failed: {len(problems)} error(s)", file=sys.stderr)
@@ -1176,6 +1327,8 @@ def _command_build(args: argparse.Namespace) -> int:
             Path(args.output),
             generated_at=args.generated_at,
             source_commit=args.source_commit,
+            abbs_tree=Path(args.abbs_tree) if args.abbs_tree else None,
+            abbs_commit=args.abbs_commit,
         )
     except ValueError as error:
         print(str(error), file=sys.stderr)
@@ -1205,6 +1358,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     check = subparsers.add_parser("check", help="validate all source metadata")
     check.add_argument("--root", default=".", help="repository root")
+    check.add_argument("--abbs-tree")
+    check.add_argument("--abbs-commit")
     check.set_defaults(handler=_command_check)
 
     build = subparsers.add_parser("build", help="validate and compile the JSON catalog")
@@ -1212,6 +1367,8 @@ def build_parser() -> argparse.ArgumentParser:
     build.add_argument("--output", default="dist/v1", help="output directory")
     build.add_argument("--generated-at", help="override generated timestamp for reproducible builds")
     build.add_argument("--source-commit", help="source commit recorded in manifest.json")
+    build.add_argument("--abbs-tree", help="clean ABBS Git checkout to generate package facts from")
+    build.add_argument("--abbs-commit", help="expected full ABBS commit ID")
     build.set_defaults(handler=_command_build)
 
     new = subparsers.add_parser("new", help="create a new app metadata scaffold")

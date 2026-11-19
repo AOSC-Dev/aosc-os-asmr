@@ -2,6 +2,8 @@
 
 [English](schema-v1.md) | **简体中文**
 
+使用 ABBS 构建时，手写文件是部分覆盖层。下列完整字段约束作用于合并结果；覆盖规则及缺省字段见 [ABBS 缺省值与手写覆盖](abbs-overlays.zh-CN.md)。外部条目必须添加 `external = true`。
+
 本文档描述 ASMR v1 的源文件和生成物约束。规范实现是 `tools/asmr.py`；`schemas/` 中的
 JSON Schema 用于编辑器补全。
 
@@ -22,9 +24,9 @@ JSON Schema 用于编辑器补全。
 ## 2. 应用文件
 
 每个应用位于 `apps/<id>/app.toml`。`id` 必须与目录名一致，只能包含小写字母、数字、
-点、下划线和连字符。
+点、下划线、加号和连字符。
 
-必填顶层字段：
+完整手写条目（含外部条目）的必填顶层字段：
 
 - `schema_version = 1`
 - `id`
@@ -67,7 +69,7 @@ path = "assets/screenshots/main.webp"
 alt = { zh-CN = "软件主界面", en = "Main window" }
 ```
 
-- `icon` 和 `hero` 必填；
+- 完整手写条目必填 `icon` 和 `hero`，ABBS 生成条目可以省略；
 - 支持 AVIF、JPEG、PNG、SVG、WebP；
 - 单个源文件不得超过 10 MiB；
 - 路径不得离开应用目录；

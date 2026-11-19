@@ -2,8 +2,10 @@
 
 [English](README.md) | **简体中文**
 
-ASMR 是 AOSKA 使用的人工维护软件目录。维护者使用 TOML、Markdown 和媒体文件描述
-应用；CI 校验源数据并生成只读 JSON Catalog。
+ASMR 以 ABBS 生成值为缺省值，手写 metadata 只覆盖写出的字段。源外条目必须显式标记 `external = true`。完整规则见 [缺省值与覆盖](docs/abbs-overlays.zh-CN.md)。
+
+维护者使用 TOML、Markdown 和媒体文件补充应用信息；CI 从 ABBS 生成缺省目录，
+合并手写字段并生成只读 JSON Catalog。
 
 ASMR 负责：
 
@@ -30,10 +32,10 @@ python3 tools/asmr.py new example-app \
   --category utilities
 
 # 校验全部源数据
-python3 tools/asmr.py check
+python3 tools/asmr.py check --abbs-tree ../aosc-os-abbs
 
 # 构建 dist/v1 JSON Catalog
-python3 tools/asmr.py build
+python3 tools/asmr.py build --abbs-tree ../aosc-os-abbs
 
 # 运行测试
 python3 -m unittest discover -s tests -v
@@ -42,9 +44,9 @@ python3 -m unittest discover -s tests -v
 也可以使用：
 
 ```bash
-make check
+make check ABBS_TREE=../aosc-os-abbs
 make test
-make build
+make build ABBS_TREE=../aosc-os-abbs
 ```
 
 完整流程见
