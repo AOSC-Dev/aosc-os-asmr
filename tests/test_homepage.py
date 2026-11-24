@@ -47,9 +47,42 @@ class HomepageTests(unittest.TestCase):
         self.assertEqual([APP, "sample-assisted-app"], collection["apps"])
         detail = self.read_json(f"apps/{APP}.json")
         self.assertEqual({"app": APP}, homepage["hero"]["target"])
+        self.assertEqual([homepage["hero"]], homepage["banners"])
         self.assertEqual(detail["media"]["hero"], homepage["hero"]["image"])
         self.assertTrue((self.output / homepage["hero"]["image"]).is_file())
         self.assertFalse((self.output / "homepage/assets").exists())
+
+    def test_multiple_banners_publish_in_order_independently_of_essentials(self):
+        image = self.home / "assets/announcement.svg"
+        image.parent.mkdir(exist_ok=True)
+        image.write_text('<svg xmlns="http://www.w3.org/2000/svg"/>')
+        self.hero.write_text(f'''schema_version = 1
+
+[[banners]]
+target = {{ url = "https://aosc.io/" }}
+image = "assets/announcement.svg"
+[banners.locales."zh-CN"]
+title = "社区公告"
+
+[[banners]]
+target = {{ app = "{APP}" }}
+[banners.locales."zh-CN"]
+title = "应用"
+''')
+        homepage = self.build()
+        first, second = homepage["banners"]
+        self.assertEqual(first, homepage["hero"])
+        self.assertEqual({"url": "https://aosc.io/"}, first["target"])
+        self.assertEqual({"app": APP}, second["target"])
+        self.assertTrue((self.output / first["image"]).is_file())
+        self.assertTrue((self.output / second["image"]).is_file())
+        self.assertEqual("essentials", homepage["essentials"])
+
+        self.hero.write_text('schema_version = 1\nbanners = []\n')
+        homepage = self.build()
+        self.assertEqual([], homepage["banners"])
+        self.assertIsNone(homepage["hero"])
+        self.assertEqual("essentials", homepage["essentials"])
 
     def test_editorial_image_is_published_hashed_and_versioned(self):
         image = self.home / "assets/features/banner.svg"

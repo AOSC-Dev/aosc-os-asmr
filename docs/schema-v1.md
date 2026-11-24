@@ -209,23 +209,24 @@ The builder rejects duplicate IDs and references to unknown applications.
 
 ## 5. Homepage
 
-The homepage has one hero banner, an Essentials collection, and an ordered list
-of tips and guides. Each section has its own handwritten source.
+The homepage has an ordered banner carousel, an Essentials collection, and an
+ordered list of tips and guides. Their sources are maintained independently.
 
 | Source | Fields |
 | --- | --- |
-| `manual/homepage/hero.toml` | `schema_version = 1`, `target`, `locales`, and an optional `image` for an app target. |
+| `manual/homepage/hero.toml` | `schema_version = 1` and an ordered array of `[[banners]]`. Each entry has `target`, `locales`, and `image`. Use `banners = []` for an empty carousel. |
 | `manual/collections/essentials.toml` | The collection defined in section 4. Its `apps` list sets display order. A listed collection with ID `essentials` appears on the homepage. |
 | `manual/homepage/guides.toml` | `schema_version = 1`, an ordered `items` array, and optional `more_url` for the guide directory. Each `[[items]]` entry has a unique `id`, `date`, `url`, and `locales`. An empty list is written as `items = []`. |
 
-The hero's `target` table takes exactly one key. Use `app` for a catalog app ID,
+Each banner's `target` table takes exactly one key. Use `app` for a catalog app ID,
 `collection` for a collection ID, or `url` for an HTTPS page. The builder checks
 IDs against the merged catalog. Supply `image = "assets/<filename>"` for
 dedicated artwork under `manual/homepage/assets/`. Section 2.2 lists supported
 image formats and the file size limit. An app target may omit `image` if the app
-already has a published `media.hero`.
+already has a published `media.hero`. The original single-banner format with
+top-level `target`, `locales`, and optional `image` is also accepted.
 
-The hero and each guide require `locales.<locale>.title` for the repository's
+Each banner and guide requires `locales.<locale>.title` for the repository's
 default locale. Each translation includes a title and may include a `subtitle`.
 Guide IDs use the same characters as app IDs. The `date` field records the day
 ASMR added the guide, in `YYYY-MM-DD` format. The builder preserves the order
@@ -251,11 +252,13 @@ Clients follow the `homepage` path in `index.json` to `homepage.json` from
 the same build. The file is generated even when the homepage has no content:
 
 ```json
-{"schema_version": 1, "hero": null, "essentials": null, "guides": {"items": []}}
+{"schema_version": 1, "hero": null, "banners": [], "essentials": null, "guides": {"items": []}}
 ```
 
-When present, `hero` contains `target`, `locales`, and the resolved `image`
-path relative to `dist/v1/`. Dedicated artwork uses `homepage/assets/…`.
+`banners` preserves the order in `hero.toml`. Each item contains `target`,
+`locales`, and an `image` path relative to `dist/v1/`. The legacy `hero` field
+contains the first banner, or `null` when the array is empty. Dedicated
+artwork uses `homepage/assets/…`.
 An app's existing hero keeps its `apps/<id>/assets/…` path. The `essentials`
 value is the collection ID to look up in `collections.json`, or `null` for a
 hidden or absent collection. Guide entries retain their source fields and order,

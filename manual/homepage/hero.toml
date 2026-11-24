@@ -1,11 +1,25 @@
 schema_version = 1
-target = { collection = "essentials" }
+
+[[banners]]
+target = { url = "https://aosc.io/news/2026-06-08-new-default-wallpapers" }
+image = "assets/point-elizabeth.jpg"
+
+[banners.locales."zh-CN"]
+title = "安同 OS 默认壁纸"
+subtitle = "《伊丽莎白港远眺》 · Yichen"
+
+[banners.locales.en]
+title = "AOSC OS default wallpapers"
+subtitle = "From Point Elizabeth · Yichen"
+
+[[banners]]
+target = { url = "https://aosc.io/aosc-os/relnote" }
 image = "assets/essentials.svg"
 
-[locales."zh-CN"]
-title = "装机必备"
-subtitle = "用 Firefox 浏览网页，用 VLC 播放影音。"
+[banners.locales."zh-CN"]
+title = "安同 OS 发行注记"
+subtitle = "了解最近的系统变更"
 
-[locales.en]
-title = "Essentials"
-subtitle = "Browse the web with Firefox and play your media with VLC."
+[banners.locales.en]
+title = "AOSC OS release notes"
+subtitle = "See recent system changes"

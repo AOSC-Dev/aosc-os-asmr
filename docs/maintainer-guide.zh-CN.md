@@ -138,7 +138,7 @@ apps = ["firefox", "vendor-app"]
 
 | 想改的内容 | 维护入口 |
 | --- | --- |
-| 换首页头图 | 在 [hero.toml](../manual/homepage/hero.toml) 填写标题和跳转目标。专用图片放在 `manual/homepage/assets/`。推荐应用时，可省略 `image` 复用该应用已有的头图。 |
+| 换首页头图 | 在 [hero.toml](../manual/homepage/hero.toml) 按展示顺序添加 `[[banners]]`，每项填写标题和跳转目标。专用图片放在 `manual/homepage/assets/`。推荐应用时，可省略 `image` 复用该应用已有的头图。 |
 | 调整装机必备 | 在 [essentials.toml](../manual/collections/essentials.toml) 增删或调换 `apps` 中的应用 ID。首页按列表顺序展示。 |
 | 添加或调整技巧指南 | 在 [guides.toml](../manual/homepage/guides.toml) 按展示顺序编辑 `[[items]]`。如需链接到指南总目录，在文件顶层设置 `more_url`。 |
 
