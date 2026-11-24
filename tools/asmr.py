@@ -771,24 +771,23 @@ def _homepage_locales(
     return locales
 
 
-def _read_hero(
-    path: Path, apps: dict[str, Any], collections: dict[str, Any], default_locale: str,
-    problems: list[Problem],
-) -> dict[str, Any] | None:
-    data = _homepage_file(path, {"target", "image", "locales"}, problems)
-    if data is None:
-        return None
-    target = _table(data, "target", path, "target", problems)
-    _reject_unknown_keys(target, {"app", "collection", "url"}, path, "target", problems)
+def _validate_banner(
+    data: dict[str, Any], path: Path, apps: dict[str, Any], collections: dict[str, Any],
+    default_locale: str, problems: list[Problem], prefix: str = "",
+) -> dict[str, Any]:
+    target_field = f"{prefix}target"
+    image_field = f"{prefix}image"
+    target = _table(data, "target", path, target_field, problems)
+    _reject_unknown_keys(target, {"app", "collection", "url"}, path, target_field, problems)
     if len(target) != 1:
-        problems.append(Problem(path, "target", "specify exactly one of app, collection, or url"))
+        problems.append(Problem(path, target_field, "specify exactly one of app, collection, or url"))
     if "url" in target:
-        _https_url(target["url"], path, "target.url", problems)
+        _https_url(target["url"], path, f"{target_field}.url", problems)
     for key, catalog in (("app", apps), ("collection", collections)):
         if key in target:
             value = target[key]
             if not isinstance(value, str) or value not in catalog:
-                problems.append(Problem(path, f"target.{key}", f"references unknown {key}: {value}"))
+                problems.append(Problem(path, f"{target_field}.{key}", f"references unknown {key}: {value}"))
 
     app_id = target.get("app")
     relative = data.get("image")
@@ -801,17 +800,39 @@ def _read_hero(
         output_dir = f"apps/{app_id}"
     image = None
     if relative is None:
-        problems.append(Problem(path, "image", "required unless the target app supplies media.hero"))
+        problems.append(Problem(path, image_field, "required unless the target app supplies media.hero"))
     elif not isinstance(relative, str) or (
         not Path(relative).is_relative_to("assets") or ".." in Path(relative).parts
     ):
-        problems.append(Problem(path, "image", "must be a relative path under assets/"))
+        problems.append(Problem(path, image_field, "must be a relative path under assets/"))
     else:
         asset = Path(relative).relative_to("assets")
-        if _asset_path(asset_dir / "assets", asset.as_posix(), path, "image", problems):
+        if _asset_path(asset_dir / "assets", asset.as_posix(), path, image_field, problems):
             image = f"{output_dir}/assets/{asset.as_posix()}"
-    locales = _homepage_locales(data, default_locale, path, "locales", problems)
+    locales = _homepage_locales(data, default_locale, path, f"{prefix}locales", problems)
     return {"target": target, "image": image, "locales": locales}
+
+
+def _read_banners(
+    path: Path, apps: dict[str, Any], collections: dict[str, Any], default_locale: str,
+    problems: list[Problem],
+) -> list[dict[str, Any]]:
+    fields = {"target", "image", "locales"}
+    data = _homepage_file(path, fields | {"banners"}, problems)
+    if data is None:
+        return []
+    if "banners" not in data:
+        return [_validate_banner(data, path, apps, collections, default_locale, problems)]
+
+    if fields.intersection(data):
+        problems.append(Problem(path, "banners", "cannot combine banners with top-level target, image, or locales"))
+    banners = _list_of_tables(data, "banners", path, "banners", problems, required=False)
+    result = []
+    for index, banner in enumerate(banners):
+        field = f"banners[{index}]"
+        _reject_unknown_keys(banner, fields, path, field, problems)
+        result.append(_validate_banner(banner, path, apps, collections, default_locale, problems, field + "."))
+    return result
 
 
 def _read_guides(path: Path, default_locale: str, problems: list[Problem]) -> dict[str, Any]:
@@ -853,9 +874,11 @@ def _read_homepage(
     problems: list[Problem],
 ) -> dict[str, Any]:
     directory = manual_root / "homepage"
+    banners = _read_banners(directory / "hero.toml", apps, collections, default_locale, problems)
     return {
         "schema_version": 1,
-        "hero": _read_hero(directory / "hero.toml", apps, collections, default_locale, problems),
+        "hero": banners[0] if banners else None,
+        "banners": banners,
         "essentials": "essentials" if collections.get("essentials", {}).get("visibility") == "listed" else None,
         "guides": _read_guides(directory / "guides.toml", default_locale, problems),
     }
@@ -1223,9 +1246,11 @@ def build_catalog(
         index["abbs_inventory"] = "abbs-packages.json"
     _write_json(output / "index.json", index)
     _write_json(output / "homepage.json", catalog.homepage)
-    hero = catalog.homepage["hero"]
-    if hero and hero["image"].startswith("homepage/assets/"):
-        image_path = Path(hero["image"])
+    banner_images = {banner["image"] for banner in catalog.homepage["banners"]}
+    for image in sorted(banner_images):
+        if not image.startswith("homepage/assets/"):
+            continue
+        image_path = Path(image)
         (output / image_path).parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(root / "manual" / image_path, output / image_path)
     _write_json(

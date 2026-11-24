@@ -79,7 +79,7 @@ manual/apps/<id>/app.toml       Handwritten overrides and external apps
 manual/apps/<id>/description.*.md  Localized descriptions
 manual/apps/<id>/assets/        Icons, hero images, and screenshots
 manual/collections/*.toml       Ordered app lists, including essentials.toml
-manual/homepage/hero.toml       Homepage banner, destination, and localized copy
+manual/homepage/hero.toml       Homepage banners in display order
 manual/homepage/assets/         Artwork for the homepage banner
 manual/homepage/guides.toml     Ordered Tips & Guides links
 manual/taxonomy/categories.toml Category definitions

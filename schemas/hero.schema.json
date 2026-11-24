@@ -1,12 +1,44 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://aosc.io/asmr/schemas/hero.schema.json",
-  "title": "ASMR homepage hero",
+  "title": "ASMR homepage banners",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "target", "locales"],
+  "required": ["schema_version"],
   "properties": {
     "schema_version": { "const": 1 },
+    "target": { "$ref": "#/$defs/target" },
+    "image": { "$ref": "#/$defs/image" },
+    "locales": { "$ref": "#/$defs/locales" },
+    "banners": { "type": "array", "items": { "$ref": "#/$defs/banner" } }
+  },
+  "oneOf": [
+    {
+      "required": ["banners"],
+      "not": {
+        "anyOf": [{ "required": ["target"] }, { "required": ["image"] }, { "required": ["locales"] }]
+      }
+    },
+    { "$ref": "#/$defs/bannerFields" }
+  ],
+  "$defs": {
+    "banner": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "target": { "$ref": "#/$defs/target" },
+        "image": { "$ref": "#/$defs/image" },
+        "locales": { "$ref": "#/$defs/locales" }
+      },
+      "$ref": "#/$defs/bannerFields"
+    },
+    "bannerFields": {
+      "required": ["target", "locales"],
+      "anyOf": [
+        { "required": ["image"] },
+        { "properties": { "target": { "required": ["app"] } } }
+      ]
+    },
     "target": {
       "type": "object",
       "additionalProperties": false,
@@ -36,9 +68,5 @@
         }
       }
     }
-  },
-  "anyOf": [
-    { "required": ["image"] },
-    { "properties": { "target": { "required": ["app"] } } }
-  ]
+  }
 }

@@ -74,7 +74,7 @@ manual/apps/<id>/app.toml       手写字段覆盖与外部应用
 manual/apps/<id>/description.*.md  长介绍
 manual/apps/<id>/assets/        Icon、头图和截图
 manual/collections/*.toml       有序应用集合，含装机必备 essentials.toml
-manual/homepage/hero.toml       首页头图的文案、图片路径和跳转目标
+manual/homepage/hero.toml       按展示顺序维护首页头图
 manual/homepage/assets/         首页头图素材
 manual/homepage/guides.toml     按展示顺序排列的技巧指南
 manual/taxonomy/categories.toml 分类定义

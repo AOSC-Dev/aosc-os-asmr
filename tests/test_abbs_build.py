@@ -86,7 +86,7 @@ class AbbsBuildTests(unittest.TestCase):
         app = json.loads((output / "apps/sample-app.json").read_text())
         self.assertEqual({"backend": "amo", "names": ["sample-app"]}, app["installers"][0]["package"])
         homepage = json.loads((output / "homepage.json").read_text())
-        self.assertEqual({"schema_version": 1, "hero": None, "essentials": None, "guides": {"items": []}}, homepage)
+        self.assertEqual({"schema_version": 1, "hero": None, "banners": [], "essentials": None, "guides": {"items": []}}, homepage)
         self.assertEqual(["sample-app"], [app["id"] for app in json.loads((output / "index.json").read_text())["apps"]])
 
 

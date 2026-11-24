@@ -151,7 +151,7 @@ already contains every `listed + active` application; there is no handwritten
 
 | Change | Where to edit |
 | --- | --- |
-| Feature an app, a collection, or a web page | Set the destination and localized headline in [hero.toml](../manual/homepage/hero.toml). Place dedicated artwork in `manual/homepage/assets/`, or omit `image` to use the target app's existing hero. |
+| Feature an app, a collection, or a web page | Add a `[[banners]]` entry with a destination and localized headline to [hero.toml](../manual/homepage/hero.toml). The order in the file sets the carousel order. Place dedicated artwork in `manual/homepage/assets/`, or omit `image` to use the target app's existing hero. |
 | Change Essentials recommendations | Edit the `apps` list in [essentials.toml](../manual/collections/essentials.toml). The homepage follows its order. |
 | Add or reorder a tip | Edit the `[[items]]` entries in [guides.toml](../manual/homepage/guides.toml). Set `more_url` at the top of the file to link to a guide directory. |
 
